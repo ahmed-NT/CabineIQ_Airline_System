@@ -1,0 +1,12 @@
+com\royalairmaroc\passenger\exception\GlobalExceptionHandler.class
+com\royalairmaroc\passenger\dto\PassengerResponseDTO.class
+com\royalairmaroc\passenger\repository\PassengerRepository.class
+com\royalairmaroc\passenger\PassengerServiceApplication.class
+com\royalairmaroc\passenger\dto\PassengerRequestDTO.class
+com\royalairmaroc\passenger\entity\Passenger$PassengerBuilder.class
+com\royalairmaroc\passenger\dto\PassengerRequestDTO$PassengerRequestDTOBuilder.class
+com\royalairmaroc\passenger\service\PassengerServiceImpl.class
+com\royalairmaroc\passenger\dto\PassengerResponseDTO$PassengerResponseDTOBuilder.class
+com\royalairmaroc\passenger\controller\PassengerController.class
+com\royalairmaroc\passenger\service\PassengerService.class
+com\royalairmaroc\passenger\entity\Passenger.class

@@ -1,0 +1,2 @@
+com\royalairmaroc\gateway\ApiGatewayApplication.class
+com\royalairmaroc\gateway\filter\JwtAuthFilter.class

@@ -1,0 +1,12 @@
+com\royalairmaroc\aircraft\controller\AircraftController.class
+com\royalairmaroc\aircraft\repository\AircraftRepository.class
+com\royalairmaroc\aircraft\service\AircraftServiceImpl.class
+com\royalairmaroc\aircraft\dto\AircraftRequestDTO.class
+com\royalairmaroc\aircraft\dto\AircraftResponseDTO.class
+com\royalairmaroc\aircraft\entity\Aircraft.class
+com\royalairmaroc\aircraft\service\AircraftService.class
+com\royalairmaroc\aircraft\exception\GlobalExceptionHandler.class
+com\royalairmaroc\aircraft\entity\Aircraft$AircraftBuilder.class
+com\royalairmaroc\aircraft\entity\Aircraft$AircraftStatus.class
+com\royalairmaroc\aircraft\exception\AircraftNotFoundException.class
+com\royalairmaroc\aircraft\AircraftServiceApplication.class

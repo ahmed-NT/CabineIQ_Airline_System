@@ -1,0 +1,50 @@
+package com.royalairmaroc.seat.controller;
+
+import com.royalairmaroc.seat.dto.*;
+import com.royalairmaroc.seat.service.SeatService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/seats")
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+public class SeatController {
+
+    private final SeatService seatService;
+
+    @PostMapping(value = "/generate", consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<SeatDTO>> generateSeats(
+            @RequestBody GenerateSeatsRequestDTO request) {
+        return ResponseEntity.ok(seatService.generateSeats(request));
+    }
+
+    @GetMapping("/aircraft/{aircraftId}")
+    public ResponseEntity<SeatMapDTO> getSeatMap(
+            @PathVariable("aircraftId") Long aircraftId) {
+        return ResponseEntity.ok(seatService.getSeatMap(aircraftId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SeatDTO> getSeatById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(seatService.getSeatById(id));
+    }
+
+    @PutMapping(value = "/{seatId}/status")
+    public ResponseEntity<SeatDTO> updateSeatStatus(
+            @PathVariable("seatId") String seatId,
+            @RequestParam("aircraftId") Long aircraftId,
+            @RequestParam("status") String status) {
+        return ResponseEntity.ok(
+            seatService.updateSeatStatus(seatId, aircraftId, status));
+    }
+
+    @DeleteMapping("/aircraft/{aircraftId}")
+    public ResponseEntity<Void> deleteAllSeats(
+            @PathVariable("aircraftId") Long aircraftId) {
+        seatService.deleteAllSeatsForAircraft(aircraftId);
+        return ResponseEntity.noContent().build();
+    }
+}

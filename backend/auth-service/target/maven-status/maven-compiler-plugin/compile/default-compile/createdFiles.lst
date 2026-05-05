@@ -1,0 +1,13 @@
+com\royalairmaroc\auth\AuthServiceApplication.class
+com\royalairmaroc\auth\service\JwtService.class
+com\royalairmaroc\auth\dto\RegisterRequestDTO.class
+com\royalairmaroc\auth\controller\AuthController.class
+com\royalairmaroc\auth\entity\User$UserBuilder.class
+com\royalairmaroc\auth\dto\AuthResponseDTO.class
+com\royalairmaroc\auth\service\AuthServiceImpl.class
+com\royalairmaroc\auth\entity\User$Role.class
+com\royalairmaroc\auth\dto\LoginRequestDTO.class
+com\royalairmaroc\auth\service\AuthService.class
+com\royalairmaroc\auth\entity\User.class
+com\royalairmaroc\auth\repository\UserRepository.class
+com\royalairmaroc\auth\config\SecurityConfig.class
