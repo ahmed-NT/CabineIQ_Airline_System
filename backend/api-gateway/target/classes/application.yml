@@ -1,5 +1,3 @@
-server:
-  port: 8080
 spring:
   application:
     name: api-gateway
@@ -26,16 +24,47 @@ spring:
           uri: lb://flight-service
           predicates:
             - Path=/api/flights/**
+        - id: feedback-service
+          uri: lb://feedback-service
+          predicates:
+            - Path=/api/feedback/**
+        - id: ml-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/ml/**
+          filters:
+            - RewritePath=/api/ml/(?<segment>.*), /${segment}
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/api/ai/**
+          filters:
+            - RewritePath=/api/ai/(?<segment>.*), /${segment}
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - RewritePath=/api/notifications(?<segment>.*), /notifications${segment}
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "http://localhost:3000"
-            allowedMethods: "*"
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
             allowedHeaders: "*"
+            allowCredentials: true
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}

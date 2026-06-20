@@ -27,7 +27,7 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/actuator/**")
                 .permitAll()
-                .anyRequest().authenticated());
+                .anyRequest().permitAll());
         return http.build();
     }
 

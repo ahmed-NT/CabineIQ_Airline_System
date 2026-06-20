@@ -1,0 +1,257 @@
+version: "3.9"
+
+# ── Réseau interne ─────────────────────────────────────────────────────────────
+networks:
+  airline-net:
+    driver: bridge
+
+# ── Volumes persistants ────────────────────────────────────────────────────────
+volumes:
+  mysql-data:
+  ml-models:
+
+# ── Variables communes ─────────────────────────────────────────────────────────
+x-java-common: &java-common
+  networks: [airline-net]
+  restart: on-failure
+
+x-db-env: &db-env
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+  EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+
+services:
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 1. BASE DE DONNÉES
+  # ════════════════════════════════════════════════════════════════════════════
+  mysql:
+    image: mysql:8.0
+    container_name: airline-mysql
+    networks: [airline-net]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 2. SERVICE REGISTRY (Eureka)
+  # ════════════════════════════════════════════════════════════════════════════
+  discovery-service:
+    <<: *java-common
+    container_name: airline-discovery
+    build:
+      context: ./backend/discovery-service
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 3. SERVICES MÉTIER JAVA
+  # ════════════════════════════════════════════════════════════════════════════
+  auth-service:
+    <<: *java-common
+    container_name: airline-auth
+    build:
+      context: ./backend/auth-service
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/auth_db
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  aircraft-service:
+    <<: *java-common
+    container_name: airline-aircraft
+    build:
+      context: ./backend/aircraft-service
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/aircraft_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  seat-service:
+    <<: *java-common
+    container_name: airline-seat
+    build:
+      context: ./backend/seat-service
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/seat_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  passenger-service:
+    <<: *java-common
+    container_name: airline-passenger
+    build:
+      context: ./backend/passenger-service
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/passenger_db
+      GATEWAY_URL: http://api-gateway:8080
+      SEAT_SERVICE_URL: http://seat-service:8082
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  flight-service:
+    <<: *java-common
+    container_name: airline-flight
+    build:
+      context: ./backend/flight-service
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flight_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  feedback-service:
+    <<: *java-common
+    container_name: airline-feedback
+    build:
+      context: ./backend/feedback-service
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/feedback_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  notification-service:
+    <<: *java-common
+    container_name: airline-notification
+    build:
+      context: ./backend/notification-service
+    ports:
+      - "8089:8089"
+    environment:
+      <<: *db-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/notification_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-service:
+        condition: service_healthy
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 4. AI SERVICE (Claude API)
+  # ════════════════════════════════════════════════════════════════════════════
+  ai-service:
+    <<: *java-common
+    container_name: airline-ai
+    build:
+      context: ./backend/ai-service
+    ports:
+      - "8088:8088"
+    environment:
+      <<: *db-env
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GATEWAY_URL: http://api-gateway:8080
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 5. ML SERVICE (Python / XGBoost)
+  # ════════════════════════════════════════════════════════════════════════════
+  ml-service:
+    container_name: airline-ml
+    build:
+      context: ./backend/ml-service
+    networks: [airline-net]
+    restart: on-failure
+    ports:
+      - "8087:8087"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: feedback_db
+      DB_USER: root
+      DB_PASS: ${MYSQL_ROOT_PASSWORD:-root}
+      MODEL_DIR: /app/models
+    volumes:
+      - ml-models:/app/models
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 6. API GATEWAY
+  # ════════════════════════════════════════════════════════════════════════════
+  api-gateway:
+    <<: *java-common
+    container_name: airline-gateway
+    build:
+      context: ./backend/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      JWT_SECRET: ${JWT_SECRET}
+      ML_SERVICE_URL: http://ml-service:8087
+      SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDORIGINS: "http://localhost,http://frontend"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # 7. FRONTEND (React → nginx)
+  # ════════════════════════════════════════════════════════════════════════════
+  frontend:
+    container_name: airline-frontend
+    build:
+      context: ./frontend-new
+    networks: [airline-net]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway

@@ -1,0 +1,194 @@
+% ============================================================
+%  USE CASE DIAGRAM — CabineIQ (Royal Air Maroc)
+%  Compile with: pdflatex or lualatex
+% ============================================================
+\documentclass[border=12pt]{standalone}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, calc}
+
+% ── Colour palette ──────────────────────────────────────────
+\definecolor{sysbox}{RGB}{255,255,220}       % light yellow system box
+\definecolor{sysborder}{RGB}{100,100,100}     % grey border
+
+% Use-case category colours
+\definecolor{ucAuth}{RGB}{180,230,180}        % green  — authentication
+\definecolor{ucFlight}{RGB}{200,210,255}      % blue   — flight management
+\definecolor{ucSeat}{RGB}{255,200,200}        % salmon — seat management
+\definecolor{ucPassenger}{RGB}{255,220,180}   % orange — passenger management
+\definecolor{ucFeedback}{RGB}{230,200,255}    % violet — feedback / analytics
+\definecolor{ucAI}{RGB}{200,240,240}          % cyan   — AI / ML
+\definecolor{ucNotif}{RGB}{255,230,200}       % peach  — notifications / admin
+\definecolor{ucOffer}{RGB}{255,200,210}       % pink   — offers
+
+% ── Styles ──────────────────────────────────────────────────
+\tikzset{
+  % Use-case ellipse (generic)
+  uc/.style={
+    ellipse,
+    draw=#1!60!black,
+    fill=#1!40,
+    thick,
+    text width=3.2cm,
+    align=center,
+    font=\small\sffamily,
+    inner sep=3pt,
+    minimum height=1cm,
+  },
+  % Actor (stick figure emulated with a circle + label)
+  actor/.style={
+    circle,
+    draw,
+    thick,
+    minimum size=10mm,
+    font=\small\sffamily\bfseries,
+    inner sep=1pt,
+  },
+  % Association line
+  assoc/.style={draw, thick, gray!70},
+  % Include / extend dashed arrow
+  incl/.style={
+    draw,
+    thick,
+    dashed,
+    gray!60,
+    -{Stealth[length=5pt]},
+  },
+}
+
+\begin{document}
+\begin{tikzpicture}[node distance=0.6cm and 0.8cm]
+
+% ══════════════════════════════════════════════════════════════
+%  USE CASES — positioned on a grid inside the system boundary
+% ══════════════════════════════════════════════════════════════
+
+% ── Row 1: Authentication ─────────────────────────────────
+\node[uc=ucAuth] (login)
+  {Se connecter\\(JWT)};
+
+% ── Row 2: Flight management ─────────────────────────────
+\node[uc=ucFlight, below left=0.8cm and 0.6cm of login] (viewFlights)
+  {Consulter\\les vols};
+\node[uc=ucFlight, below right=0.8cm and 0.6cm of login] (changeStatus)
+  {Modifier\\statut vol};
+
+% ── Row 3: Seat management ───────────────────────────────
+\node[uc=ucSeat, below=0.8cm of viewFlights] (viewSeatmap)
+  {Voir plan\\de sièges};
+\node[uc=ucSeat, below=0.8cm of changeStatus] (genSeats)
+  {Générer plan\\sièges};
+
+% ── Row 4: Passenger management ──────────────────────────
+\node[uc=ucPassenger, below=0.8cm of viewSeatmap] (searchPax)
+  {Rechercher\\passager};
+\node[uc=ucPassenger, below=0.8cm of genSeats] (assignSeat)
+  {Assigner\\un siège};
+
+% ── Row 5: Feedback ──────────────────────────────────────
+\node[uc=ucFeedback, below=0.8cm of $(searchPax)!0.5!(assignSeat)$] (submitFeedback)
+  {Soumettre\\un sondage};
+
+% ── Row 6: Analytics ─────────────────────────────────────
+\node[uc=ucFeedback, below left=0.8cm and 0.6cm of submitFeedback] (viewAnalytics)
+  {Voir les\\analytics};
+\node[uc=ucAI, below right=0.8cm and 0.6cm of submitFeedback] (viewML)
+  {Voir prédictions\\ML};
+
+% ── Row 7: QR + Aircraft ────────────────────────────────
+\node[uc=ucOffer, below=0.8cm of viewAnalytics] (genQR)
+  {Générer QR\\feedback};
+\node[uc=ucNotif, below=0.8cm of viewML] (manageAircraft)
+  {Gérer\\les avions};
+
+% ── Row 8: Notifications + Users ─────────────────────────
+\node[uc=ucNotif, below=0.8cm of genQR] (viewNotif)
+  {Consulter\\notifications};
+\node[uc=ucNotif, below=0.8cm of manageAircraft] (manageUsers)
+  {Gérer les\\utilisateurs};
+
+% ── Row 9: AI + Offers ──────────────────────────────────
+\node[uc=ucAI, below=0.8cm of viewNotif] (chatbot)
+  {Utiliser\\chatbot IA};
+\node[uc=ucOffer, below=0.8cm of manageUsers] (offer)
+  {Offre\\personnalisée};
+
+% ══════════════════════════════════════════════════════════════
+%  SYSTEM BOUNDARY
+% ══════════════════════════════════════════════════════════════
+\node[
+  draw=sysborder,
+  thick,
+  rounded corners=4pt,
+  fill=sysbox,
+  fit=(login)(viewFlights)(changeStatus)(viewSeatmap)(genSeats)
+      (searchPax)(assignSeat)(submitFeedback)(viewAnalytics)(viewML)
+      (genQR)(manageAircraft)(viewNotif)(manageUsers)(chatbot)(offer),
+  inner sep=18pt,
+  label={[font=\normalsize\sffamily\bfseries, anchor=north]
+         north:{CabineIQ — Système interne RAM}},
+] (sysbox) {};
+
+% ══════════════════════════════════════════════════════════════
+%  ACTORS
+% ══════════════════════════════════════════════════════════════
+\node[actor, left=2.8cm  of sysbox.west,  yshift= 1.5cm] (agent)     {Agent};
+\node[actor, right=2.8cm of sysbox.east,  yshift= 1.5cm] (admin)     {Admin};
+\node[actor, left=2.8cm  of sysbox.west,  yshift=-4.5cm] (passager)  {Passager};
+\node[actor, right=2.8cm of sysbox.east,  yshift=-4.5cm] (scheduler) {Scheduler};
+
+% ══════════════════════════════════════════════════════════════
+%  ACTOR → USE-CASE ASSOCIATIONS
+% ══════════════════════════════════════════════════════════════
+
+% ── Agent ─────────────────────────────────────────────────
+\foreach \uc in {login,viewFlights,changeStatus,viewSeatmap,searchPax,
+                 assignSeat,submitFeedback,viewAnalytics,viewML,
+                 genQR,viewNotif,chatbot}{
+  \draw[assoc] (agent) -- (\uc);
+}
+
+% ── Admin (all agent capabilities + admin-specific) ──────
+\foreach \uc in {login,changeStatus,genSeats,assignSeat,
+                 viewAnalytics,viewML,manageAircraft,
+                 manageUsers,offer}{
+  \draw[assoc] (admin) -- (\uc);
+}
+
+% ── Passager ──────────────────────────────────────────────
+\foreach \uc in {submitFeedback,chatbot}{
+  \draw[assoc] (passager) -- (\uc);
+}
+
+% ── Scheduler (system actor) ─────────────────────────────
+\foreach \uc in {viewML,offer}{
+  \draw[assoc] (scheduler) -- (\uc);
+}
+
+% ══════════════════════════════════════════════════════════════
+%  «include» / «extend» RELATIONSHIPS
+% ══════════════════════════════════════════════════════════════
+
+% Se connecter includes → Consulter les vols (after login, you land on dashboard)
+\draw[incl] (login) -- node[font=\tiny\itshape, above, sloped] {«include»}
+            (viewFlights);
+
+% Assigner siège includes → Voir plan de sièges
+\draw[incl] (assignSeat) -- node[font=\tiny\itshape, above, sloped] {«include»}
+            (viewSeatmap);
+
+% Rechercher passager includes → Assigner un siège
+\draw[incl] (searchPax) -- node[font=\tiny\itshape, right, near start] {«include»}
+            (assignSeat);
+
+% Voir analytics extends → Voir prédictions ML
+\draw[incl] (viewAnalytics) -- node[font=\tiny\itshape, above, sloped] {«extend»}
+            (viewML);
+
+% Voir prédictions ML extends → Offre personnalisée
+\draw[incl] (viewML) -- node[font=\tiny\itshape, right, near start] {«extend»}
+            (offer);
+
+\end{tikzpicture}
+\end{document}

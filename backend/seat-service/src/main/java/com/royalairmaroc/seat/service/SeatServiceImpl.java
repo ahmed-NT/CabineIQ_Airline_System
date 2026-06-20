@@ -45,13 +45,13 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
-    public SeatMapDTO getSeatMap(Long aircraftId) {
+    public SeatMapDTO getSeatMap(Long aircraftId, String aircraftCode) {
         List<Seat> seats = seatRepository
             .findByAircraftIdOrderByRowNumberAscSeatLetterAsc(aircraftId);
 
         SeatMapDTO seatMap = new SeatMapDTO();
         seatMap.setAircraftId(aircraftId);
-        seatMap.setAircraftCode("");
+        seatMap.setAircraftCode(aircraftCode != null ? aircraftCode : "");
         seatMap.setRows(new ArrayList<>());
 
         if (seats.isEmpty()) {

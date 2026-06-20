@@ -6,6 +6,7 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -19,11 +20,22 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     @Value("${jwt.secret}")
     private String secretKey;
 
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+
+    /** Exact-prefix matches (plus {@link #AUTH_API_ANT_PATTERN}). */
     private static final List<String> PUBLIC_PATHS = List.of(
         "/api/auth/login",
-        "/api/auth/register",
-        "/api/auth/validate"
+        "/api/auth/register"
     );
+
+    private static final String AUTH_API_ANT_PATTERN = "/api/auth/**";
+
+    private boolean isPublicPath(String path) {
+        if (PATH_MATCHER.match(AUTH_API_ANT_PATTERN, path)) {
+            return true;
+        }
+        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange,
@@ -31,8 +43,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest()
             .getURI().getPath();
 
-        if (PUBLIC_PATHS.stream()
-                .anyMatch(path::startsWith)) {
+        if (isPublicPath(path)) {
             return chain.filter(exchange);
         }
 

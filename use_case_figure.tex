@@ -1,0 +1,133 @@
+% ============================================================
+%  PASTE INTO YOUR PREAMBLE (before \begin{document}):
+%
+%  \usepackage{pdflscape}
+%  \usepackage{tikz}
+%  \usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, calc}
+% ============================================================
+
+% ============================================================
+%  PASTE THIS FIGURE BLOCK INTO YOUR DOCUMENT BODY:
+% ============================================================
+
+\begin{pdflscape}
+\begin{figure}[p]
+\centering
+\resizebox{0.95\linewidth}{!}{%
+% ── Colour palette ──
+\definecolor{sysbox}{RGB}{255,255,220}
+\definecolor{sysborder}{RGB}{100,100,100}
+\definecolor{ucAuth}{RGB}{180,230,180}
+\definecolor{ucFlight}{RGB}{200,210,255}
+\definecolor{ucSeat}{RGB}{255,200,200}
+\definecolor{ucPassenger}{RGB}{255,220,180}
+\definecolor{ucFeedback}{RGB}{230,200,255}
+\definecolor{ucAI}{RGB}{200,240,240}
+\definecolor{ucNotif}{RGB}{255,230,200}
+\definecolor{ucOffer}{RGB}{255,200,210}
+%
+\begin{tikzpicture}[
+  node distance=0.6cm and 0.8cm,
+  uc/.style={
+    ellipse, draw=#1!60!black, fill=#1!40, thick,
+    text width=3.2cm, align=center,
+    font=\small\sffamily, inner sep=3pt, minimum height=1cm,
+  },
+  actor/.style={
+    circle, draw, thick, minimum size=10mm,
+    font=\small\sffamily\bfseries, inner sep=1pt,
+  },
+  assoc/.style={draw, thick, gray!70},
+  incl/.style={draw, thick, dashed, gray!60, -{Stealth[length=5pt]}},
+]
+
+% ═══════════ USE CASES ═══════════
+
+% Row 1: Auth
+\node[uc=ucAuth] (login) {Se connecter\\(JWT)};
+
+% Row 2: Flights
+\node[uc=ucFlight, below left=0.8cm and 0.6cm of login] (viewFlights) {Consulter\\les vols};
+\node[uc=ucFlight, below right=0.8cm and 0.6cm of login] (changeStatus) {Modifier\\statut vol};
+
+% Row 3: Seats
+\node[uc=ucSeat, below=0.8cm of viewFlights] (viewSeatmap) {Voir plan\\de si\`eges};
+\node[uc=ucSeat, below=0.8cm of changeStatus] (genSeats) {G\'en\'erer plan\\si\`eges};
+
+% Row 4: Passengers
+\node[uc=ucPassenger, below=0.8cm of viewSeatmap] (searchPax) {Rechercher\\passager};
+\node[uc=ucPassenger, below=0.8cm of genSeats] (assignSeat) {Assigner\\un si\`ege};
+
+% Row 5: Feedback
+\node[uc=ucFeedback, below=0.8cm of $(searchPax)!0.5!(assignSeat)$] (submitFeedback) {Soumettre\\un sondage};
+
+% Row 6: Analytics
+\node[uc=ucFeedback, below left=0.8cm and 0.6cm of submitFeedback] (viewAnalytics) {Voir les\\analytics};
+\node[uc=ucAI, below right=0.8cm and 0.6cm of submitFeedback] (viewML) {Voir pr\'edictions\\ML};
+
+% Row 7: QR + Aircraft
+\node[uc=ucOffer, below=0.8cm of viewAnalytics] (genQR) {G\'en\'erer QR\\feedback};
+\node[uc=ucNotif, below=0.8cm of viewML] (manageAircraft) {G\'erer\\les avions};
+
+% Row 8: Notifications + Users
+\node[uc=ucNotif, below=0.8cm of genQR] (viewNotif) {Consulter\\notifications};
+\node[uc=ucNotif, below=0.8cm of manageAircraft] (manageUsers) {G\'erer les\\utilisateurs};
+
+% Row 9: AI + Offers
+\node[uc=ucAI, below=0.8cm of viewNotif] (chatbot) {Utiliser\\chatbot IA};
+\node[uc=ucOffer, below=0.8cm of manageUsers] (offer) {Offre\\personnalis\'ee};
+
+% ═══════════ SYSTEM BOUNDARY ═══════════
+\node[
+  draw=sysborder, thick, rounded corners=4pt, fill=sysbox,
+  fit=(login)(viewFlights)(changeStatus)(viewSeatmap)(genSeats)
+      (searchPax)(assignSeat)(submitFeedback)(viewAnalytics)(viewML)
+      (genQR)(manageAircraft)(viewNotif)(manageUsers)(chatbot)(offer),
+  inner sep=18pt,
+  label={[font=\normalsize\sffamily\bfseries, anchor=north]
+         north:{CabineIQ --- Syst\`eme interne RAM}},
+] (sysbox) {};
+
+% ═══════════ ACTORS ═══════════
+\node[actor, left=2.8cm  of sysbox.west,  yshift= 1.5cm] (agent)     {Agent};
+\node[actor, right=2.8cm of sysbox.east,  yshift= 1.5cm] (admin)     {Admin};
+\node[actor, left=2.8cm  of sysbox.west,  yshift=-4.5cm] (passager)  {Passager};
+\node[actor, right=2.8cm of sysbox.east,  yshift=-4.5cm] (scheduler) {Scheduler};
+
+% ═══════════ AGENT ASSOCIATIONS ═══════════
+\foreach \uc in {login,viewFlights,changeStatus,viewSeatmap,searchPax,
+                 assignSeat,submitFeedback,viewAnalytics,viewML,
+                 genQR,viewNotif,chatbot}{
+  \draw[assoc] (agent) -- (\uc);
+}
+
+% ═══════════ ADMIN ASSOCIATIONS ═══════════
+\foreach \uc in {login,changeStatus,genSeats,assignSeat,
+                 viewAnalytics,viewML,manageAircraft,
+                 manageUsers,offer}{
+  \draw[assoc] (admin) -- (\uc);
+}
+
+% ═══════════ PASSAGER ASSOCIATIONS ═══════════
+\foreach \uc in {submitFeedback,chatbot}{
+  \draw[assoc] (passager) -- (\uc);
+}
+
+% ═══════════ SCHEDULER ASSOCIATIONS ═══════════
+\foreach \uc in {viewML,offer}{
+  \draw[assoc] (scheduler) -- (\uc);
+}
+
+% ═══════════ INCLUDE / EXTEND ═══════════
+\draw[incl] (login) -- node[font=\tiny\itshape, above, sloped] {<<include>>} (viewFlights);
+\draw[incl] (assignSeat) -- node[font=\tiny\itshape, above, sloped] {<<include>>} (viewSeatmap);
+\draw[incl] (searchPax) -- node[font=\tiny\itshape, right, near start] {<<include>>} (assignSeat);
+\draw[incl] (viewAnalytics) -- node[font=\tiny\itshape, above, sloped] {<<extend>>} (viewML);
+\draw[incl] (viewML) -- node[font=\tiny\itshape, right, near start] {<<extend>>} (offer);
+
+\end{tikzpicture}%
+}% end resizebox
+\caption{Diagramme de cas d'utilisation --- CabineIQ}
+\label{fig:use-case}
+\end{figure}
+\end{pdflscape}

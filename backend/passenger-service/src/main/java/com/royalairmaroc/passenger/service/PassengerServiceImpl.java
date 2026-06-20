@@ -5,9 +5,12 @@ import com.royalairmaroc.passenger.dto.PassengerResponseDTO;
 import com.royalairmaroc.passenger.entity.Passenger;
 import com.royalairmaroc.passenger.repository.PassengerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,6 +18,13 @@ import java.util.stream.Collectors;
 public class PassengerServiceImpl implements PassengerService {
 
     private final PassengerRepository repository;
+    private final RestTemplate restTemplate;
+
+    @Value("${gateway.url:http://localhost:8080}")
+    private String gatewayUrl;
+
+    @Value("${seat.service.url:http://localhost:8082}")
+    private String seatServiceUrl;
 
     @Override
     public PassengerResponseDTO createPassenger(PassengerRequestDTO dto) {
@@ -70,11 +80,27 @@ public class PassengerServiceImpl implements PassengerService {
     public PassengerResponseDTO assignSeat(Long id, String seatId, Long aircraftId) {
         Passenger passenger = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Passenger not found"));
-
+    
         passenger.setSeatId(seatId);
         passenger.setAircraftId(aircraftId);
-        
+    
         Passenger saved = repository.save(passenger);
+    
+        try {
+            String url = seatServiceUrl + "/api/seats/" + seatId + "/status?aircraftId=" + aircraftId;
+            Map<String, String> body = Map.of("status", "OCCUPIED");
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            org.springframework.http.HttpEntity<Map<String, String>> request =
+                new org.springframework.http.HttpEntity<>(body, headers);
+            restTemplate.exchange(url,
+                org.springframework.http.HttpMethod.PUT,
+                request,
+                Void.class);
+        } catch (Exception e) {
+            System.err.println("Failed to update seat status: " + e.getMessage());
+        }
+    
         return mapToDTO(saved);
     }
 
