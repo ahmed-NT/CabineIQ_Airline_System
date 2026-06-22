@@ -142,6 +142,8 @@ services:
     environment:
       <<: *db-env
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flight_db
+      PASSENGER_SERVICE_URL: http://passenger-service:8083
+      NOTIFICATION_SERVICE_URL: http://notification-service:8089
     depends_on:
       mysql:
         condition: service_healthy
@@ -174,6 +176,10 @@ services:
     environment:
       <<: *db-env
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/notification_db
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
     depends_on:
       mysql:
         condition: service_healthy

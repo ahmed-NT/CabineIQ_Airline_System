@@ -1,12 +1,23 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { passengersAPI, flightsAPI } from '@/lib/api';
 import type { Passenger, Flight } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import ExpandableSearch from '@/components/dashboard/ExpandableSearch';
 import PassengerProfilePanel from '@/components/passengers/PassengerProfilePanel';
-import { TbUsers, TbChevronDown, TbPlane } from 'react-icons/tb';
+import { TbUsers, TbChevronDown, TbPlane, TbPlus, TbTrash, TbX } from 'react-icons/tb';
+
+const EMPTY_PASSENGER = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  passportNumber: '',
+  nationality: '',
+  flightId: '',
+  seatId: '',
+  aircraftId: '',
+};
 
 const AVATAR_COLORS = [
   'bg-[#C41E3A]', 'bg-[#006233]', 'bg-[#C9A84C]',
@@ -20,10 +31,14 @@ function getInitials(firstName: string, lastName: string) {
 export default function PassengersPage() {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [flightFilter, setFlightFilter] = useState<number | 'all'>('all');
   const [selectedPassenger, setSelectedPassenger] = useState<Passenger | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState(EMPTY_PASSENGER);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data: passengers = [], isLoading } = useQuery({
     queryKey: ['passengers'],
@@ -33,6 +48,29 @@ export default function PassengersPage() {
   const { data: flights = [] } = useQuery({
     queryKey: ['flights'],
     queryFn: () => flightsAPI.getAll().then((r) => r.data),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: typeof EMPTY_PASSENGER) =>
+      passengersAPI.create({
+        ...data,
+        flightId: Number(data.flightId) || undefined,
+        aircraftId: Number(data.aircraftId) || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['passengers'] });
+      setShowModal(false);
+      setForm(EMPTY_PASSENGER);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => passengersAPI.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['passengers'] });
+      setDeleteId(null);
+      setSelectedPassenger(null);
+    },
   });
 
   const flightMap = useMemo(() => {
@@ -98,6 +136,15 @@ export default function PassengersPage() {
           <span className="text-[10px]" style={{ color: textMuted }}>
             {filtered.length} of {passengers.length}
           </span>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-white ml-2"
+            style={{ background: '#C41E3A' }}
+          >
+            <TbPlus className="w-3.5 h-3.5" />
+            Add
+          </button>
 
           <div className="ml-auto flex items-center gap-3 min-w-0">
             <ExpandableSearch
@@ -262,16 +309,28 @@ export default function PassengersPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPassenger(passenger);
-                          }}
-                          className="text-[10px] font-semibold px-2 py-1 rounded transition-opacity hover:opacity-80"
-                          style={{ color: textSecondary }}
-                        >
-                          View →
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedPassenger(passenger);
+                            }}
+                            className="text-[10px] font-semibold px-2 py-1 rounded transition-opacity hover:opacity-80"
+                            style={{ color: textSecondary }}
+                          >
+                            View →
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteId(passenger.id);
+                            }}
+                            className="p-1 rounded transition-opacity hover:opacity-80"
+                            style={{ color: '#ef4444' }}
+                          >
+                            <TbTrash className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -289,6 +348,100 @@ export default function PassengersPage() {
           flight={selectedFlight}
           onClose={() => setSelectedPassenger(null)}
         />
+      )}
+
+      {/* Add Passenger Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-md rounded-2xl border p-6 space-y-4"
+            style={{ background: isDark ? '#071628' : 'white', borderColor: isDark ? '#1a3050' : '#e5e7eb' }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold" style={{ color: isDark ? 'white' : '#1a1a2e' }}>Add Passenger</h2>
+              <button onClick={() => { setShowModal(false); setForm(EMPTY_PASSENGER); }}>
+                <TbX className="w-5 h-5" style={{ color: textMuted }} />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ['First Name', 'firstName'],
+                ['Last Name', 'lastName'],
+                ['Email', 'email', 'email'],
+                ['Passport No.', 'passportNumber'],
+                ['Nationality', 'nationality'],
+                ['Seat ID', 'seatId'],
+              ] as [string, keyof typeof EMPTY_PASSENGER, string?][]).map(([label, key, type]) => (
+                <div key={key}>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: textMuted }}>
+                    {label}
+                  </label>
+                  <input
+                    type={type ?? 'text'}
+                    value={form[key]}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                    style={{ background: isDark ? '#0a1e38' : '#f9fafb', borderColor: isDark ? '#1a3050' : '#e5e7eb', color: isDark ? 'white' : '#1a1a2e' }}
+                  />
+                </div>
+              ))}
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: textMuted }}>
+                Flight
+              </label>
+              <select
+                value={form.flightId}
+                onChange={(e) => setForm((f) => ({ ...f, flightId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                style={{ background: isDark ? '#0a1e38' : '#f9fafb', borderColor: isDark ? '#1a3050' : '#e5e7eb', color: isDark ? 'white' : '#1a1a2e' }}
+              >
+                <option value="">No flight</option>
+                {(flights as Flight[]).map((f) => (
+                  <option key={f.id} value={f.id}>{f.flightNumber} — {f.origin}→{f.destination}</option>
+                ))}
+              </select>
+            </div>
+            {createMutation.isError && (
+              <p className="text-xs text-red-400">Failed to add passenger.</p>
+            )}
+            <button
+              onClick={() => createMutation.mutate(form)}
+              disabled={!form.firstName || !form.lastName || !form.passportNumber || createMutation.isPending}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+              style={{ background: '#C41E3A' }}
+            >
+              {createMutation.isPending ? 'Adding…' : 'Add Passenger'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-sm rounded-2xl border p-6 space-y-4"
+            style={{ background: isDark ? '#071628' : 'white', borderColor: isDark ? '#1a3050' : '#e5e7eb' }}>
+            <h2 className="text-lg font-bold" style={{ color: isDark ? 'white' : '#1a1a2e' }}>Delete Passenger?</h2>
+            <p className="text-sm" style={{ color: textMuted }}>This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold border"
+                style={{ borderColor: isDark ? '#1a3050' : '#e5e7eb', color: textMuted }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteId)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-2 rounded-xl text-sm font-semibold text-white bg-red-500 disabled:opacity-40"
+              >
+                {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

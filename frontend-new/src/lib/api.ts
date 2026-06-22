@@ -72,9 +72,16 @@ export const passengersAPI = {
     api.get(`/passengers/search?name=${name}`),
   getByFlight: (flightId: number) =>
     api.get(`/passengers/flight/${flightId}`),
+  create: (data: any) => api.post('/passengers', data),
   assignSeat: (id: number, seatId: string, aircraftId: number) =>
     api.put(`/passengers/${id}/assign-seat`, { seatId, aircraftId }),
   delete: (id: number) => api.delete(`/passengers/${id}`),
+};
+
+export const portalAPI = {
+  lookup: (passport: string) =>
+    api.get(`/passengers/portal?passport=${encodeURIComponent(passport)}`),
+  getFlightById: (id: number) => api.get(`/flights/${id}`),
 };
 
 export const feedbackAPI = {

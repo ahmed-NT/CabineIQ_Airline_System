@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { feedbackAPI } from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────
 interface SurveyData {
@@ -211,14 +212,20 @@ export default function FeedbackPage() {
     return true;
   };
 
-  const handleSubmit = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
     const finalScore = calculateScore(data);
+    setSubmitting(true);
+    try {
+      await feedbackAPI.submit({ ...data, purchaseIntentScore: finalScore });
+    } catch {
+      // non-blocking: show results even if submission fails
+    } finally {
+      setSubmitting(false);
+    }
     setScore(finalScore);
     setStep(4);
-    // In production: POST to /api/feedback
-    console.log('Survey submitted:', {
-      ...data, purchaseIntentScore: finalScore
-    });
   };
 
   const getOffer = () => {
@@ -902,13 +909,13 @@ export default function FeedbackPage() {
                 if (step === 3) handleSubmit();
                 else setStep(s => s + 1);
               }}
-              disabled={!canNext()}
+              disabled={!canNext() || submitting}
               className="flex-1 py-2.5 rounded-xl text-sm
                 font-semibold text-white transition-all"
               style={{
-                background: canNext()
+                background: canNext() && !submitting
                   ? '#C41E3A' : '#1a3050',
-                color: canNext() ? 'white' : '#2a5080',
+                color: canNext() && !submitting ? 'white' : '#2a5080',
               }}
             >
               {step === 3 ? 'Submit ✓' : 'Next →'}

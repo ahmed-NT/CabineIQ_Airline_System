@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { flightsAPI, seatsAPI, passengersAPI } from '@/lib/api';
-import type { Passenger, FlightStatus } from '@/types';
+import { flightsAPI, seatsAPI, passengersAPI, feedbackAPI } from '@/lib/api';
+import type { Passenger, FlightStatus, Feedback } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import {
   TbArrowLeft, TbPlane,
   TbCalendar, TbClock,
-  TbDoor, TbId
+  TbDoor, TbId, TbMessageDots, TbStar
 } from 'react-icons/tb';
 import StatusChanger from '@/components/flight/StatusChanger';
 import QrGenerator from '@/components/flight/QrGenerator';
@@ -51,6 +51,13 @@ export default function FlightDetail() {
   const { data: passengers = [] } = useQuery({
     queryKey: ['passengers', flightId],
     queryFn: () => passengersAPI.getByFlight(flightId).then(r => r.data),
+    enabled: !!flightId,
+  });
+
+  // Fetch feedbacks for this flight
+  const { data: feedbacks = [] } = useQuery({
+    queryKey: ['feedbacks', flightId],
+    queryFn: () => feedbackAPI.getByFlight(flightId).then(r => r.data),
     enabled: !!flightId,
   });
 
@@ -346,6 +353,100 @@ export default function FlightDetail() {
             rows={seatMap?.rows?.length || 30}
             onSeatClick={handleSeatClick}
           />
+        </div>
+
+        {/* RIGHT COLUMN — feedbacks */}
+        <div className={`w-56 flex-shrink-0 flex flex-col border-l overflow-hidden ${
+          isDark ? 'border-[#1a3050]' : 'border-gray-200'
+        }`}>
+          <div className={`h-9 flex items-center gap-2 px-3 flex-shrink-0 border-b ${
+            isDark ? 'border-[#1a3050] bg-[#0a1e38]' : 'border-gray-100 bg-gray-50'
+          }`}>
+            <TbMessageDots className="w-3.5 h-3.5 text-[#C41E3A]" />
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${
+              isDark ? 'text-[#4a7aab]' : 'text-gray-500'
+            }`}>
+              Feedbacks
+            </span>
+            <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded ${
+              isDark ? 'bg-[#071628] text-[#4a7aab]' : 'bg-gray-200 text-gray-500'
+            }`}>
+              {(feedbacks as Feedback[]).length}
+            </span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {(feedbacks as Feedback[]).length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 gap-2">
+                <TbMessageDots className={`w-6 h-6 ${isDark ? 'text-[#1a3050]' : 'text-gray-300'}`} />
+                <p className={`text-[10px] ${isDark ? 'text-[#2a5080]' : 'text-gray-400'}`}>
+                  No feedback yet
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y" style={{ borderColor: isDark ? '#0d1e30' : '#f3f4f6' }}>
+                {(feedbacks as Feedback[]).map((fb) => {
+                  const score = fb.purchaseIntentScore ?? 0;
+                  const color = score >= 70 ? '#4ade80' : score >= 40 ? '#fbbf24' : '#f87171';
+                  return (
+                    <div key={fb.id} className={`p-3 space-y-1.5 ${
+                      isDark ? 'hover:bg-[#0a1e38]' : 'hover:bg-gray-50'
+                    } transition-colors`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-[10px] font-mono ${
+                          isDark ? 'text-[#4a7aab]' : 'text-gray-500'
+                        }`}>
+                          {fb.seatId || '—'}
+                          {fb.seatClass && (
+                            <span className="ml-1 opacity-60">·{fb.seatClass[0]}</span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <TbStar className="w-3 h-3" style={{ color }} />
+                          <span className="text-[10px] font-bold" style={{ color }}>
+                            {score}
+                          </span>
+                        </div>
+                      </div>
+                      {fb.tripPurpose && (
+                        <p className={`text-[10px] capitalize ${
+                          isDark ? 'text-[#2a5080]' : 'text-gray-400'
+                        }`}>
+                          {fb.tripPurpose.toLowerCase().replace('_', ' ')}
+                        </p>
+                      )}
+                      {fb.route && (
+                        <p className={`text-[9px] font-mono ${
+                          isDark ? 'text-[#1a3050]' : 'text-gray-300'
+                        }`}>
+                          {fb.route}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Avg score footer */}
+          {(feedbacks as Feedback[]).length > 0 && (() => {
+            const avg = Math.round(
+              (feedbacks as Feedback[]).reduce((s, f) => s + (f.purchaseIntentScore ?? 0), 0) /
+              (feedbacks as Feedback[]).length
+            );
+            const color = avg >= 70 ? '#4ade80' : avg >= 40 ? '#fbbf24' : '#f87171';
+            return (
+              <div className={`p-3 border-t flex items-center justify-between flex-shrink-0 ${
+                isDark ? 'border-[#1a3050] bg-[#071628]' : 'border-gray-100 bg-gray-50'
+              }`}>
+                <span className={`text-[10px] ${isDark ? 'text-[#2a5080]' : 'text-gray-400'}`}>
+                  Avg intent score
+                </span>
+                <span className="text-sm font-bold" style={{ color }}>{avg}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

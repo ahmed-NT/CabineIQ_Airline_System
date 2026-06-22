@@ -11,6 +11,8 @@ import {
   TbMessageDots,
   TbRobot,
   TbBell,
+  TbHelicopter,
+  TbUserShield,
 } from 'react-icons/tb';
 import ChatPanel from '@/components/chat/ChatPanel';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
@@ -20,6 +22,7 @@ import { useNotifications } from '@/components/notifications/useNotifications';
 const navItems = [
   { icon: TbWorld, path: '/', label: 'Dashboard' },
   { icon: TbPlane, path: '/flights', label: 'Flights' },
+  { icon: TbHelicopter, path: '/aircraft', label: 'Aircraft' },
   { icon: TbArmchair, path: '/seat-map', label: 'Seat Map' },
   { icon: TbUsers, path: '/passengers', label: 'Passengers' },
 ];
@@ -27,6 +30,7 @@ const navItems = [
 const bottomItems = [
   { icon: TbChartBar, path: '/analytics', label: 'Analytics' },
   { icon: TbMessageDots, path: '/feedback', label: 'Feedback' },
+  { icon: TbUserShield, path: '/users', label: 'Users' },
 ];
 
 export default function AppShell() {

@@ -25,7 +25,9 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     /** Exact-prefix matches (plus {@link #AUTH_API_ANT_PATTERN}). */
     private static final List<String> PUBLIC_PATHS = List.of(
         "/api/auth/login",
-        "/api/auth/register"
+        "/api/auth/register",
+        "/api/passengers/portal",
+        "/api/feedback"
     );
 
     private static final String AUTH_API_ANT_PATTERN = "/api/auth/**";

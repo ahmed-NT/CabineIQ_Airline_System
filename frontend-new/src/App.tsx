@@ -14,6 +14,9 @@ import SeatMapPage from '@/pages/SeatMapPage';
 import PassengersPage from '@/pages/PassengersPage';
 import AnalyticsPage from '@/pages/AnalyticsPage';
 import FeedbackPage from '@/pages/FeedbackPage';
+import AircraftPage from '@/pages/AircraftPage';
+import PassengerPortalPage from '@/pages/PassengerPortalPage';
+import UsersPage from '@/pages/UsersPage';
 import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
@@ -33,6 +36,7 @@ export default function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/feedback" element={<FeedbackPage />} />
+          <Route path="/passenger" element={<PassengerPortalPage />} />
 
           {/* Protected routes inside AppShell */}
           <Route
@@ -46,9 +50,11 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="flights" element={<FlightsPage />} />
             <Route path="flights/:id" element={<FlightDetail />} />
+            <Route path="aircraft" element={<AircraftPage />} />
             <Route path="seat-map" element={<SeatMapPage />} />
             <Route path="passengers" element={<PassengersPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="users" element={<UsersPage />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

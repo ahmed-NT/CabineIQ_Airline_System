@@ -2,6 +2,7 @@ package com.royalairmaroc.passenger.controller;
 
 import com.royalairmaroc.passenger.dto.PassengerRequestDTO;
 import com.royalairmaroc.passenger.dto.PassengerResponseDTO;
+import com.royalairmaroc.passenger.repository.PassengerRepository;
 import com.royalairmaroc.passenger.service.PassengerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class PassengerController {
 
     private final PassengerService passengerService;
+    private final PassengerRepository passengerRepository;
 
     @GetMapping
     public ResponseEntity<List<PassengerResponseDTO>> getAllPassengers() {
@@ -58,5 +60,16 @@ public class PassengerController {
     public ResponseEntity<Void> deletePassenger(@PathVariable("id") Long id) {
         passengerService.deletePassenger(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Public endpoint — no JWT required. Passenger looks up their booking by passport. */
+    @GetMapping("/portal")
+    public ResponseEntity<?> portalLookup(@RequestParam("passport") String passport) {
+        return passengerRepository.findByPassportNumber(passport)
+            .map(p -> {
+                var dto = passengerService.getPassengerById(p.getId());
+                return ResponseEntity.ok(dto);
+            })
+            .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 }

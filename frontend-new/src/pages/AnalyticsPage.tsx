@@ -9,6 +9,7 @@ import {
   IconDownload,
 } from '@tabler/icons-react';
 import { feedbackAPI, mlAPI } from '@/lib/api';
+import { TbCircleFilled } from 'react-icons/tb';
 import type { AnalyticsData, MlPredictionsResponse } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import KpiCard from '@/components/analytics/KpiCard';
@@ -112,6 +113,13 @@ export default function AnalyticsPage() {
     retry: 1,
   });
 
+  const { data: mlHealth } = useQuery({
+    queryKey: ['ml-health'],
+    queryFn: () => mlAPI.getHealth().then((r) => r.data as { status: string; model_phase: string; total_responses: number }),
+    refetchInterval: 30_000,
+    retry: 1,
+  });
+
   const data = analytics ?? EMPTY_ANALYTICS;
   const ml = mlData ?? cachedMl ?? (mlError ? { ...FALLBACK_ML } : null);
   const mlOffline = mlError && !mlData;
@@ -188,6 +196,25 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* ML service health badge */}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border ${
+            isDark ? 'border-[#1a3050]' : 'border-gray-200'
+          }`}>
+            <TbCircleFilled className="w-2.5 h-2.5" style={{
+              color: mlHealth?.status === 'ok' ? '#4ade80' : mlError ? '#f87171' : '#fbbf24'
+            }} />
+            <span style={{ color: isDark ? '#4a7aab' : '#6b7280' }}>
+              ML ·{' '}
+              {mlHealth
+                ? (mlHealth.model_phase ?? mlHealth.status)
+                : mlError ? 'offline' : '…'}
+            </span>
+            {mlHealth?.total_responses !== undefined && (
+              <span style={{ color: isDark ? '#2a5080' : '#9ca3af' }}>
+                · {mlHealth.total_responses} samples
+              </span>
+            )}
+          </div>
           <button
             onClick={() => refetch()}
             disabled={isFetching}
