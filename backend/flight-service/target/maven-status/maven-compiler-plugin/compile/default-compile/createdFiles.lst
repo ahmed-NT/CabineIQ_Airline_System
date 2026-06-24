@@ -5,6 +5,7 @@ com\royalairmaroc\flight\repository\FlightRepository.class
 com\royalairmaroc\flight\entity\Flight.class
 com\royalairmaroc\flight\FlightServiceApplication.class
 com\royalairmaroc\flight\dto\FlightResponseDTO.class
+com\royalairmaroc\flight\config\AppConfig.class
 com\royalairmaroc\flight\dto\FlightResponseDTO$FlightResponseDTOBuilder.class
 com\royalairmaroc\flight\entity\Flight$FlightStatus.class
 com\royalairmaroc\flight\entity\Flight$FlightBuilder.class

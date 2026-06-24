@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authAPI } from '@/lib/api';
 import { useTheme } from '@/hooks/useTheme';
-import { TbUsers, TbPlus, TbX, TbShield, TbUser, TbCheck } from 'react-icons/tb';
+import { TbUsers, TbPlus, TbX, TbShield, TbUser, TbCheck, TbPlane } from 'react-icons/tb';
 
-type UserRole = 'ADMIN' | 'USER';
+type UserRole = 'ADMIN' | 'USER' | 'CREW';
 
 interface CreatedUser {
   username: string;
@@ -23,6 +23,7 @@ const EMPTY_FORM: CreatedUser = {
 const ROLE_COLORS = {
   ADMIN: { bg: '#2a1040', text: '#a78bfa', border: '#4c1d95' },
   USER: { bg: '#0f2a1a', text: '#4ade80', border: '#14532d' },
+  CREW: { bg: '#2a1e00', text: '#fbbf24', border: '#92400e' },
 };
 
 export default function UsersPage() {
@@ -93,6 +94,7 @@ export default function UsersPage() {
         <p className="text-xs opacity-80">
           Users created here receive access to the CabineIQ admin dashboard.
           ADMIN role has full access. USER role has read-only access.
+          CREW role can only access flight details and score seats.
         </p>
       </div>
 
@@ -119,6 +121,8 @@ export default function UsersPage() {
                   style={{ background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
                   {u.role === 'ADMIN'
                     ? <TbShield className="w-3 h-3" />
+                    : u.role === 'CREW'
+                    ? <TbPlane className="w-3 h-3" />
                     : <TbUser className="w-3 h-3" />}
                   {u.role}
                 </span>
@@ -203,9 +207,10 @@ export default function UsersPage() {
                   Role
                 </label>
                 <div className="flex gap-2">
-                  {(['USER', 'ADMIN'] as const).map((role) => {
+                  {(['USER', 'ADMIN', 'CREW'] as const).map((role) => {
                     const rc = ROLE_COLORS[role];
                     const active = form.role === role;
+                    const Icon = role === 'ADMIN' ? TbShield : role === 'CREW' ? TbPlane : TbUser;
                     return (
                       <button
                         key={role}
@@ -217,7 +222,7 @@ export default function UsersPage() {
                           borderColor: active ? rc.border : border,
                         }}
                       >
-                        {role === 'ADMIN' ? <TbShield className="w-3.5 h-3.5" /> : <TbUser className="w-3.5 h-3.5" />}
+                        <Icon className="w-3.5 h-3.5" />
                         {role}
                       </button>
                     );

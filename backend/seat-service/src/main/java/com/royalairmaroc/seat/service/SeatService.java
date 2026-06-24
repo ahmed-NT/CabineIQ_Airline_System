@@ -9,4 +9,8 @@ public interface SeatService {
     SeatDTO updateSeatStatus(String seatId, Long aircraftId, String status);
     SeatDTO getSeatById(Long id);
     void deleteAllSeatsForAircraft(Long aircraftId);
+
+    SeatScoreDTO scoreSeat(SeatScoreRequestDTO request, String scoredBy);
+    List<SeatScoreDTO> getScoresByFlight(Long aircraftId, Long flightId);
+    SeatMapDTO getSeatMapWithScores(Long aircraftId, String aircraftCode, Long flightId);
 }

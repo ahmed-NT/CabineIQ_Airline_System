@@ -77,7 +77,7 @@ function StarRating({
             hover:scale-110"
         >
           <span style={{
-            color: star <= value ? '#C9A84C' : '#334155'
+            color: star <= value ? '#C9A84C' : '#d1d5db'
           }}>★</span>
         </button>
       ))}
@@ -101,9 +101,9 @@ function OptionBtn({
       className="w-full py-2.5 px-4 rounded-xl border
         text-sm text-left transition-all"
       style={{
-        background: selected ? '#C41E3A15' : '#0d1e38',
-        borderColor: selected ? '#C41E3A' : '#1a3050',
-        color: selected ? '#ffffff' : '#8aa8c8',
+        background: selected ? '#C41E3A10' : '#f9fafb',
+        borderColor: selected ? '#C41E3A' : '#e5e7eb',
+        color: selected ? '#C41E3A' : '#4b5563',
         fontWeight: selected ? 600 : 400,
       }}
     >
@@ -128,16 +128,16 @@ function ToggleOption({
       className="flex items-center gap-3 w-full py-2
         px-3 rounded-lg border transition-all text-sm"
       style={{
-        background: selected ? '#C41E3A15' : 'transparent',
-        borderColor: selected ? '#C41E3A' : '#1a3050',
-        color: selected ? '#ffffff' : '#8aa8c8',
+        background: selected ? '#C41E3A10' : 'transparent',
+        borderColor: selected ? '#C41E3A' : '#e5e7eb',
+        color: selected ? '#C41E3A' : '#4b5563',
       }}
     >
       <span
         className="w-4 h-4 rounded border-2 flex
           items-center justify-center flex-shrink-0"
         style={{
-          borderColor: selected ? '#C41E3A' : '#1a3050',
+          borderColor: selected ? '#C41E3A' : '#d1d5db',
           background: selected ? '#C41E3A' : 'transparent',
         }}
       >
@@ -162,7 +162,7 @@ function ProgressBar({ step }: { step: number }) {
           style={{
             background: s <= step
               ? '#C41E3A'
-              : '#1a3050',
+              : '#e5e7eb',
           }}
         />
       ))}
@@ -250,33 +250,33 @@ export default function FeedbackPage() {
     <div
       className="min-h-screen flex items-center
         justify-center p-4"
-      style={{ background: '#07162c' }}
+      style={{ background: '#f3f4f6' }}
     >
       <div
         className="w-full max-w-sm rounded-2xl
           border overflow-hidden"
         style={{
-          background: '#0a1e38',
-          borderColor: '#1a3050',
+          background: '#ffffff',
+          borderColor: '#e5e7eb',
         }}
       >
         {/* Header */}
         <div
           className="px-5 pt-5 pb-3 border-b"
-          style={{ borderColor: '#1a3050' }}
+          style={{ borderColor: '#e5e7eb' }}
         >
           <div className="flex items-center gap-3 mb-4">
             <img
-              src="/ram-logo.jpg"
+              src="/ram-logo.png"
               alt="RAM"
               className="h-8 object-contain"
             />
             <div>
-              <p className="text-white text-sm font-semibold">
+              <p className="text-gray-900 text-sm font-semibold">
                 Royal Air Maroc
               </p>
               <p className="text-[10px]"
-                style={{ color: '#4a7aab' }}>
+                style={{ color: '#6b7280' }}>
                 Passenger Experience Survey
               </p>
             </div>
@@ -287,21 +287,21 @@ export default function FeedbackPage() {
             <div
               className="flex items-center gap-2 px-3
                 py-1.5 rounded-lg mb-3 text-xs"
-              style={{ background: '#071628' }}
+              style={{ background: '#f9fafb' }}
             >
-              <span style={{ color: '#4a7aab' }}>
+              <span style={{ color: '#6b7280' }}>
                 ✈ Flight
               </span>
-              <span className="font-semibold text-white">
+              <span className="font-semibold text-gray-900">
                 #{data.flightId}
               </span>
               {data.seatId && (
                 <>
                   <span style={{ color: '#1a3050' }}>·</span>
-                  <span style={{ color: '#4a7aab' }}>
+                  <span style={{ color: '#6b7280' }}>
                     Seat
                   </span>
-                  <span className="font-semibold text-white">
+                  <span className="font-semibold text-gray-900">
                     {data.seatId}
                   </span>
                 </>
@@ -318,20 +318,20 @@ export default function FeedbackPage() {
           {/* ── SCREEN 1: Your Journey ── */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-white font-semibold text-base">
+              <h2 className="text-gray-900 font-semibold text-base">
                 Your Journey
               </h2>
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   What brought you on board?
                 </p>
                 <div className="space-y-1.5">
                   {[
-                    { value: 'BUSINESS', label: '💼 Business' },
-                    { value: 'LEISURE', label: '🌴 Leisure / Vacation' },
-                    { value: 'FAMILY', label: '👨‍👩‍👧 Family / Event' },
+                    { value: 'BUSINESS', label: 'Business' },
+                    { value: 'LEISURE', label: 'Leisure / Vacation' },
+                    { value: 'FAMILY', label: 'Family / Event' },
                   ].map(opt => (
                     <OptionBtn
                       key={opt.value}
@@ -346,14 +346,14 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   You are travelling...
                 </p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
-                    { value: 'ALONE', label: '🧍 Alone' },
-                    { value: 'PAIR', label: '👫 With 1' },
-                    { value: 'GROUP', label: '👨‍👩‍👧 Group' },
+                    { value: 'ALONE', label: 'Alone' },
+                    { value: 'PAIR', label: 'With 1' },
+                    { value: 'GROUP', label: 'Group' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -364,13 +364,13 @@ export default function FeedbackPage() {
                       style={{
                         background:
                           data.companionCount === opt.value
-                            ? '#C41E3A15' : '#071628',
+                            ? '#C41E3A15' : '#f9fafb',
                         borderColor:
                           data.companionCount === opt.value
                             ? '#C41E3A' : '#1a3050',
                         color:
                           data.companionCount === opt.value
-                            ? '#fff' : '#8aa8c8',
+                            ? '#C41E3A' : '#4b5563',
                       }}
                     >
                       {opt.label}
@@ -381,14 +381,14 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   When did you book?
                 </p>
                 <div className="space-y-1.5">
                   {[
-                    { value: 'LAST_MINUTE', label: '⚡ Last minute' },
-                    { value: 'FEW_WEEKS', label: '📅 A few weeks ago' },
-                    { value: 'MONTHS_AHEAD', label: '🗓️ Months ahead' },
+                    { value: 'LAST_MINUTE', label: 'Last minute' },
+                    { value: 'FEW_WEEKS', label: 'A few weeks ago' },
+                    { value: 'MONTHS_AHEAD', label: 'Months ahead' },
                   ].map(opt => (
                     <OptionBtn
                       key={opt.value}
@@ -404,7 +404,7 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   How many times do you fly per year?
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -423,13 +423,13 @@ export default function FeedbackPage() {
                       style={{
                         background:
                           data.flightsPerYear === opt.value
-                            ? '#C41E3A15' : '#071628',
+                            ? '#C41E3A15' : '#f9fafb',
                         borderColor:
                           data.flightsPerYear === opt.value
                             ? '#C41E3A' : '#1a3050',
                         color:
                           data.flightsPerYear === opt.value
-                            ? '#fff' : '#8aa8c8',
+                            ? '#C41E3A' : '#4b5563',
                       }}
                     >
                       {opt.label}
@@ -443,13 +443,13 @@ export default function FeedbackPage() {
           {/* ── SCREEN 2: Your Experience ── */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="text-white font-semibold text-base">
+              <h2 className="text-gray-900 font-semibold text-base">
                 Your Experience
               </h2>
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   How much did you pay approximately?
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -468,13 +468,13 @@ export default function FeedbackPage() {
                       style={{
                         background:
                           data.pricePaidRange === opt.value
-                            ? '#C41E3A15' : '#071628',
+                            ? '#C41E3A15' : '#f9fafb',
                         borderColor:
                           data.pricePaidRange === opt.value
                             ? '#C41E3A' : '#1a3050',
                         color:
                           data.pricePaidRange === opt.value
-                            ? '#fff' : '#8aa8c8',
+                            ? '#C41E3A' : '#4b5563',
                       }}
                     >
                       {opt.label}
@@ -485,17 +485,17 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Was it worth it?
                 </p>
                 <div className="space-y-1.5">
                   {[
                     { value: 'GREAT_DEAL',
-                      label: '😍 Great deal' },
+                      label: 'Great deal' },
                     { value: 'FAIR',
-                      label: '😊 Fair price' },
+                      label: 'Fair price' },
                     { value: 'TOO_EXPENSIVE',
-                      label: '😬 Too expensive' },
+                      label: 'Too expensive' },
                   ].map(opt => (
                     <OptionBtn
                       key={opt.value}
@@ -512,17 +512,17 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   The flight was...
                 </p>
                 <div className="space-y-1.5">
                   {[
                     { value: 'BETTER',
-                      label: '🌟 Better than expected' },
+                      label: 'Better than expected' },
                     { value: 'AS_EXPECTED',
-                      label: '👍 As expected' },
+                      label: 'As expected' },
                     { value: 'WORSE',
-                      label: '👎 Disappointing' },
+                      label: 'Disappointing' },
                   ].map(opt => (
                     <OptionBtn
                       key={opt.value}
@@ -541,7 +541,7 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Comfort rating
                 </p>
                 <StarRating
@@ -552,7 +552,7 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Service rating
                 </p>
                 <StarRating
@@ -563,19 +563,19 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   I would pay more for:
                 </p>
                 <div className="space-y-1.5">
                   {[
                     { key: 'wtpNoLayover' as const,
-                      label: '✈️ No layovers' },
+                      label: 'No layovers' },
                     { key: 'wtpLegroom' as const,
-                      label: '🦵 Extra legroom' },
+                      label: 'Extra legroom' },
                     { key: 'wtpBags' as const,
-                      label: '🧳 Bags included' },
+                      label: 'Bags included' },
                     { key: 'wtpWifi' as const,
-                      label: '📶 WiFi on board' },
+                      label: 'WiFi on board' },
                   ].map(opt => (
                     <ToggleOption
                       key={opt.key}
@@ -593,23 +593,23 @@ export default function FeedbackPage() {
           {/* ── SCREEN 3: Your Next Trip ── */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="text-white font-semibold text-base">
+              <h2 className="text-gray-900 font-semibold text-base">
                 Your Next Trip
               </h2>
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Are you planning a return flight?
                 </p>
                 <div className="space-y-1.5">
                   {[
                     { value: 'BOOKED',
-                      label: '✅ Already booked with RAM' },
+                      label: 'Already booked with RAM' },
                     { value: 'PLANNED',
-                      label: '🤔 Not booked yet' },
+                      label: 'Not booked yet' },
                     { value: 'NO',
-                      label: '❌ No return needed' },
+                      label: 'No return needed' },
                   ].map(opt => (
                     <OptionBtn
                       key={opt.value}
@@ -625,7 +625,7 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Where are you heading next?
                 </p>
                 <input
@@ -638,16 +638,16 @@ export default function FeedbackPage() {
                     border text-sm focus:outline-none
                     placeholder:text-[#2a5080]"
                   style={{
-                    background: '#071628',
-                    borderColor: '#1a3050',
-                    color: 'white',
+                    background: '#f9fafb',
+                    borderColor: '#e5e7eb',
+                    color: '#111827',
                   }}
                 />
               </div>
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   When roughly?
                 </p>
                 <div className="grid grid-cols-2 gap-1.5">
@@ -666,13 +666,13 @@ export default function FeedbackPage() {
                       style={{
                         background:
                           data.nextTravelWindow === opt.value
-                            ? '#C41E3A15' : '#071628',
+                            ? '#C41E3A15' : '#f9fafb',
                         borderColor:
                           data.nextTravelWindow === opt.value
                             ? '#C41E3A' : '#1a3050',
                         color:
                           data.nextTravelWindow === opt.value
-                            ? '#fff' : '#8aa8c8',
+                            ? '#C41E3A' : '#4b5563',
                       }}
                     >
                       {opt.label}
@@ -683,19 +683,19 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   What decides your next booking?
                 </p>
                 <div className="space-y-1.5">
                   {[
                     { value: 'LOWEST_PRICE',
-                      label: '💰 Lowest price' },
+                      label: 'Lowest price' },
                     { value: 'BEST_SCHEDULE',
-                      label: '⏰ Best schedule' },
+                      label: 'Best schedule' },
                     { value: 'LOYALTY',
-                      label: '⭐ RAM loyalty points' },
+                      label: 'RAM loyalty points' },
                     { value: 'DIRECT_FLIGHT',
-                      label: '✈️ Direct flight' },
+                      label: 'Direct flight' },
                   ].map(opt => (
                     <OptionBtn
                       key={opt.value}
@@ -714,15 +714,15 @@ export default function FeedbackPage() {
 
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   If a competitor was 50€ cheaper,
                   would you switch?
                 </p>
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
-                    { value: 'YES', label: '✈ Yes' },
-                    { value: 'DEPENDS', label: '🤔 Depends' },
-                    { value: 'NO', label: '❤️ No, RAM' },
+                    { value: 'YES', label: 'Yes' },
+                    { value: 'DEPENDS', label: 'Depends' },
+                    { value: 'NO', label: 'No, RAM' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -733,13 +733,13 @@ export default function FeedbackPage() {
                       style={{
                         background:
                           data.loyaltySensitive === opt.value
-                            ? '#C41E3A15' : '#071628',
+                            ? '#C41E3A15' : '#f9fafb',
                         borderColor:
                           data.loyaltySensitive === opt.value
                             ? '#C41E3A' : '#1a3050',
                         color:
                           data.loyaltySensitive === opt.value
-                            ? '#fff' : '#8aa8c8',
+                            ? '#C41E3A' : '#4b5563',
                       }}
                     >
                       {opt.label}
@@ -755,12 +755,11 @@ export default function FeedbackPage() {
             <div className="space-y-4 py-2">
               {/* Thank you */}
               <div className="text-center">
-                <div className="text-4xl mb-3">🙏</div>
-                <h2 className="text-white font-bold text-lg mb-1">
+                <h2 className="text-gray-900 font-bold text-lg mb-1">
                   Thank you!
                 </h2>
                 <p className="text-sm"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Your feedback helps us improve
                   Royal Air Maroc for everyone.
                 </p>
@@ -770,13 +769,13 @@ export default function FeedbackPage() {
               <div
                 className="rounded-xl p-4 text-center border"
                 style={{
-                  background: '#071628',
-                  borderColor: '#1a3050',
+                  background: '#f9fafb',
+                  borderColor: '#e5e7eb',
                 }}
               >
                 <p className="text-[10px] uppercase
                   tracking-widest mb-2"
-                  style={{ color: '#2a5080' }}>
+                  style={{ color: '#9ca3af' }}>
                   Your Experience Score
                 </p>
                 <div
@@ -792,13 +791,13 @@ export default function FeedbackPage() {
                   {score}
                 </div>
                 <div className="text-xs"
-                  style={{ color: '#2a5080' }}>
+                  style={{ color: '#9ca3af' }}>
                   / 100
                 </div>
                 <div
                   className="mt-2 h-1.5 rounded-full
                     overflow-hidden"
-                  style={{ background: '#0a1e38' }}
+                  style={{ background: '#e5e7eb' }}
                 >
                   <div
                     className="h-full rounded-full
@@ -825,11 +824,11 @@ export default function FeedbackPage() {
                   }}
                 >
                   <p className="font-semibold text-sm
-                    text-white mb-1">
+                    text-gray-900 mb-1">
                     {offer.title}
                   </p>
                   <p className="text-xs mb-3"
-                    style={{ color: '#8aa8c8' }}>
+                    style={{ color: '#6b7280' }}>
                     {offer.desc}
                   </p>
                   <button
@@ -846,7 +845,7 @@ export default function FeedbackPage() {
               {/* Incentive email */}
               <div>
                 <p className="text-xs mb-2"
-                  style={{ color: '#4a7aab' }}>
+                  style={{ color: '#6b7280' }}>
                   Enter your email for a
                   10% discount on your next booking:
                 </p>
@@ -861,9 +860,9 @@ export default function FeedbackPage() {
                       border text-sm focus:outline-none
                       placeholder:text-[#2a5080]"
                     style={{
-                      background: '#071628',
-                      borderColor: '#1a3050',
-                      color: 'white',
+                      background: '#f9fafb',
+                      borderColor: '#e5e7eb',
+                      color: '#111827',
                     }}
                   />
                   <button
@@ -889,7 +888,7 @@ export default function FeedbackPage() {
         {step < 4 && (
           <div
             className="px-5 py-4 border-t flex gap-3"
-            style={{ borderColor: '#1a3050' }}
+            style={{ borderColor: '#e5e7eb' }}
           >
             {step > 1 && (
               <button
@@ -897,8 +896,8 @@ export default function FeedbackPage() {
                 className="flex-1 py-2.5 rounded-xl border
                   text-sm font-medium transition-colors"
                 style={{
-                  borderColor: '#1a3050',
-                  color: '#4a7aab',
+                  borderColor: '#d1d5db',
+                  color: '#6b7280',
                 }}
               >
                 ← Back
@@ -914,8 +913,8 @@ export default function FeedbackPage() {
                 font-semibold text-white transition-all"
               style={{
                 background: canNext() && !submitting
-                  ? '#C41E3A' : '#1a3050',
-                color: canNext() && !submitting ? 'white' : '#2a5080',
+                  ? '#C41E3A' : '#d1d5db',
+                color: canNext() && !submitting ? 'white' : '#9ca3af',
               }}
             >
               {step === 3 ? 'Submit ✓' : 'Next →'}

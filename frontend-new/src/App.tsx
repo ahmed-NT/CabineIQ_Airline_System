@@ -18,6 +18,7 @@ import AircraftPage from '@/pages/AircraftPage';
 import PassengerPortalPage from '@/pages/PassengerPortalPage';
 import UsersPage from '@/pages/UsersPage';
 import NotFound from '@/pages/NotFound';
+import CrewGuard from '@/components/layout/CrewGuard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,11 +51,11 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="flights" element={<FlightsPage />} />
             <Route path="flights/:id" element={<FlightDetail />} />
-            <Route path="aircraft" element={<AircraftPage />} />
-            <Route path="seat-map" element={<SeatMapPage />} />
-            <Route path="passengers" element={<PassengersPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="users" element={<UsersPage />} />
+            <Route path="aircraft" element={<CrewGuard><AircraftPage /></CrewGuard>} />
+            <Route path="seat-map" element={<CrewGuard><SeatMapPage /></CrewGuard>} />
+            <Route path="passengers" element={<CrewGuard><PassengersPage /></CrewGuard>} />
+            <Route path="analytics" element={<CrewGuard><AnalyticsPage /></CrewGuard>} />
+            <Route path="users" element={<CrewGuard><UsersPage /></CrewGuard>} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

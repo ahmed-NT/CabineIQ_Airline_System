@@ -28,10 +28,16 @@ export interface Aircraft {
   status: 'ACTIVE' | 'MAINTENANCE' | 'RETIRED';
 }
 
+export type ScoreColor = 'clean' | 'dirty' | 'lostitem' | 'unscored';
+
 export interface Seat {
   seatId: string;
   status: 'AVAILABLE' | 'OCCUPIED' | 'UNAVAILABLE';
   type: string | null;
+  score?: number | null;
+  lostItem?: boolean | null;
+  scoreColor?: ScoreColor | null;
+  lostItemDescription?: string | null;
 }
 
 export interface SeatRow {
@@ -64,7 +70,27 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  role: 'ADMIN' | 'USER';
+  role: 'ADMIN' | 'USER' | 'CREW';
+}
+
+export interface SeatScoreRequest {
+  seatId: string;
+  aircraftId: number;
+  flightId: number;
+  score: number;
+  lostItem: boolean;
+  lostItemDescription: string;
+}
+
+export interface SeatScoreResponse {
+  id: number;
+  seatId: string;
+  score: number;
+  lostItem: boolean;
+  lostItemDescription: string;
+  scoredBy: string;
+  scoredAt: string;
+  scoreColor: ScoreColor;
 }
 
 export interface AuthResponse {

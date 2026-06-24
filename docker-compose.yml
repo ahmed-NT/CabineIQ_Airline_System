@@ -108,6 +108,8 @@ services:
     environment:
       <<: *db-env
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/seat_db
+      SERVICES_PASSENGER_URL: http://passenger-service:8083/api/passengers
+      SERVICES_NOTIFICATION_URL: http://notification-service:8089/notifications
     depends_on:
       mysql:
         condition: service_healthy

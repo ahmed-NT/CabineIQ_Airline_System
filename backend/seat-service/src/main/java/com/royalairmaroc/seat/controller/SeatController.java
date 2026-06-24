@@ -2,6 +2,7 @@ package com.royalairmaroc.seat.controller;
 
 import com.royalairmaroc.seat.dto.*;
 import com.royalairmaroc.seat.service.SeatService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,5 +49,27 @@ public class SeatController {
             @PathVariable("aircraftId") Long aircraftId) {
         seatService.deleteAllSeatsForAircraft(aircraftId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/score")
+    public ResponseEntity<SeatScoreDTO> scoreSeat(
+            @Valid @RequestBody SeatScoreRequestDTO request,
+            @RequestHeader(value = "X-Username", defaultValue = "staff") String username) {
+        return ResponseEntity.ok(seatService.scoreSeat(request, username));
+    }
+
+    @GetMapping("/scores/aircraft/{aircraftId}/flight/{flightId}")
+    public ResponseEntity<List<SeatScoreDTO>> getScores(
+            @PathVariable("aircraftId") Long aircraftId,
+            @PathVariable("flightId") Long flightId) {
+        return ResponseEntity.ok(seatService.getScoresByFlight(aircraftId, flightId));
+    }
+
+    @GetMapping("/aircraft/{aircraftId}/scored")
+    public ResponseEntity<SeatMapDTO> getSeatMapWithScores(
+            @PathVariable("aircraftId") Long aircraftId,
+            @RequestParam(defaultValue = "") String aircraftCode,
+            @RequestParam Long flightId) {
+        return ResponseEntity.ok(seatService.getSeatMapWithScores(aircraftId, aircraftCode, flightId));
     }
 }

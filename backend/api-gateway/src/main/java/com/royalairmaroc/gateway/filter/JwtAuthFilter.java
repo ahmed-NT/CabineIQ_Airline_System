@@ -31,9 +31,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     );
 
     private static final String AUTH_API_ANT_PATTERN = "/api/auth/**";
+    private static final String WS_ANT_PATTERN = "/ws/**";
 
     private boolean isPublicPath(String path) {
         if (PATH_MATCHER.match(AUTH_API_ANT_PATTERN, path)) {
+            return true;
+        }
+        if (PATH_MATCHER.match(WS_ANT_PATTERN, path)) {
             return true;
         }
         return PUBLIC_PATHS.stream().anyMatch(path::startsWith);

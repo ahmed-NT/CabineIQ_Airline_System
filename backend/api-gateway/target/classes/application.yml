@@ -29,7 +29,7 @@ spring:
           predicates:
             - Path=/api/feedback/**
         - id: ml-service
-          uri: http://localhost:8087
+          uri: ${ML_SERVICE_URL:http://localhost:8087}
           predicates:
             - Path=/api/ml/**
           filters:
@@ -46,12 +46,18 @@ spring:
             - Path=/api/notifications/**
           filters:
             - RewritePath=/api/notifications(?<segment>.*), /notifications${segment}
+        - id: seat-ws
+          uri: lb:ws://seat-service
+          predicates:
+            - Path=/ws/**
       globalcors:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
               - "http://localhost:5173"
               - "http://localhost:3000"
+              - "http://localhost"
+              - "http://frontend"
             allowedMethods:
               - GET
               - POST

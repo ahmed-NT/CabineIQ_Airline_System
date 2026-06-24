@@ -12,6 +12,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+services:
+  passenger-url: http://localhost:8083/api/passengers
+  notification-url: http://localhost:8089/notifications
 eureka:
   client:
     service-url:

@@ -5,6 +5,7 @@ export const useAuth = () => {
 
   const isAuthenticated = !!token;
   const isAdmin = role === 'ADMIN';
+  const isCrew = role === 'CREW';
 
   const logout = () => {
     localStorage.removeItem('ram_token');
@@ -19,6 +20,6 @@ export const useAuth = () => {
     localStorage.setItem('ram_role', role);
   };
 
-  return { token, role, username, isAuthenticated, isAdmin, logout, setAuth };
+  return { token, role, username, isAuthenticated, isAdmin, isCrew, logout, setAuth };
 };
 

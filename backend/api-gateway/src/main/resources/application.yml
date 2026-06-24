@@ -46,6 +46,10 @@ spring:
             - Path=/api/notifications/**
           filters:
             - RewritePath=/api/notifications(?<segment>.*), /notifications${segment}
+        - id: seat-ws
+          uri: lb:ws://seat-service
+          predicates:
+            - Path=/ws/**
       globalcors:
         corsConfigurations:
           '[/**]':

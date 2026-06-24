@@ -37,7 +37,7 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
-  const { username, logout } = useAuth();
+  const { username, logout, isCrew } = useAuth();
   const [chatOpen, setChatOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const { notifications, unreadCount, markAllRead, markRead, shakeBell } =
@@ -158,7 +158,7 @@ export default function AppShell() {
         >
           {/* Top nav items */}
           <div className="flex flex-col pt-2">
-            {navItems.map(({ icon: Icon, path, label }) => (
+            {navItems.filter(item => !isCrew || item.path === '/' || item.path === '/flights').map(({ icon: Icon, path, label }) => (
               <button
                 key={path}
                 onClick={() => navigate(path)}
@@ -190,7 +190,7 @@ export default function AppShell() {
 
           {/* Bottom nav items */}
           <div className="flex flex-col">
-            {bottomItems.map(({ icon: Icon, path, label }) => (
+            {(isCrew ? [] : bottomItems).map(({ icon: Icon, path, label }) => (
               <button
                 key={path}
                 onClick={() => navigate(path)}

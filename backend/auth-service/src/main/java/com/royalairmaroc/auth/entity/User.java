@@ -37,7 +37,7 @@ public class User implements UserDetails {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    public enum Role { ADMIN, USER }
+    public enum Role { ADMIN, USER, CREW }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

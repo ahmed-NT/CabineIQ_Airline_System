@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { flightsAPI, seatsAPI, passengersAPI, feedbackAPI } from '@/lib/api';
 import type { Passenger, FlightStatus, Feedback } from '@/types';
+import type { SeatScoreInfo } from '@/components/flight/Aircraft3D';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
+import { useSeatScoring } from '@/hooks/useSeatScoring';
 import {
   TbArrowLeft, TbPlane,
   TbCalendar, TbClock,
@@ -13,6 +16,7 @@ import StatusChanger from '@/components/flight/StatusChanger';
 import QrGenerator from '@/components/flight/QrGenerator';
 import Aircraft3D from '@/components/flight/Aircraft3D';
 import PassengerList from '@/components/flight/PassengerList';
+import SeatScoreModal from '@/components/flight/SeatScoreModal';
 
 const STATUS_COLORS: Record<string, string> = {
   DEPARTED:  'bg-[#0d2a3a] text-[#38bdf8]',
@@ -27,9 +31,11 @@ export default function FlightDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { isCrew } = useAuth();
   const queryClient = useQueryClient();
   const [selectedPassenger, setSelectedPassenger] =
     useState<Passenger | null>(null);
+  const [scoringSeatId, setScoringSeatId] = useState<string | null>(null);
 
   const flightId = Number(id);
 
@@ -60,6 +66,29 @@ export default function FlightDetail() {
     queryFn: () => feedbackAPI.getByFlight(flightId).then(r => r.data),
     enabled: !!flightId,
   });
+
+  // Seat scoring
+  const canScore = flight?.status === 'DEPARTED' || flight?.status === 'ARRIVED';
+  const scoringMode = canScore;
+  const { scoredSeatMap, submitScore, isSubmitting } = useSeatScoring(
+    flight?.aircraftId ?? null,
+    seatMap?.aircraftCode ?? '',
+    flight?.id ?? null,
+    scoringMode && canScore,
+  );
+
+  const scoreDataMap = useMemo(() => {
+    if (!scoringMode || !scoredSeatMap) return undefined;
+    const map: Record<string, SeatScoreInfo> = {};
+    scoredSeatMap.rows?.forEach((row: any) => {
+      row.seats.forEach((seat: any) => {
+        if (seat.seatId && seat.score != null) {
+          map[seat.seatId] = { score: seat.score, lostItem: !!seat.lostItem };
+        }
+      });
+    });
+    return map;
+  }, [scoringMode, scoredSeatMap]);
 
   // Occupied seats
   const occupiedSeats = useMemo(() =>
@@ -185,11 +214,13 @@ export default function FlightDetail() {
 
         {/* Right */}
         <div className="flex items-center gap-2">
-          <StatusChanger
-            flightId={flight.id}
-            currentStatus={flight.status}
-            onStatusChange={handleStatusChange}
-          />
+          {!isCrew && (
+            <StatusChanger
+              flightId={flight.id}
+              currentStatus={flight.status}
+              onStatusChange={handleStatusChange}
+            />
+          )}
           <QrGenerator
             flightId={flight.id}
             flightNumber={flight.flightNumber}
@@ -348,10 +379,11 @@ export default function FlightDetail() {
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           <Aircraft3D
             occupiedSeats={occupiedSeats}
-            selectedSeat={selectedPassenger?.seatId || null}
+            selectedSeat={selectedPassenger?.seatId || scoringSeatId || null}
+            scoreData={scoringMode ? scoreDataMap : undefined}
             totalSeats={totalSeats || 180}
             rows={seatMap?.rows?.length || 30}
-            onSeatClick={handleSeatClick}
+            onSeatClick={scoringMode ? (seatId) => setScoringSeatId(seatId) : handleSeatClick}
           />
         </div>
 
@@ -449,6 +481,34 @@ export default function FlightDetail() {
           })()}
         </div>
       </div>
+      {/* Seat Score Modal */}
+      {scoringMode && scoringSeatId && flight && (
+        <SeatScoreModal
+          seatId={scoringSeatId}
+          existingScore={scoredSeatMap?.rows
+            ?.flatMap((r: any) => r.seats)
+            ?.find((s: any) => s.seatId === scoringSeatId)?.score}
+          existingLostItem={scoredSeatMap?.rows
+            ?.flatMap((r: any) => r.seats)
+            ?.find((s: any) => s.seatId === scoringSeatId)?.lostItem}
+          existingDescription={scoredSeatMap?.rows
+            ?.flatMap((r: any) => r.seats)
+            ?.find((s: any) => s.seatId === scoringSeatId)?.lostItemDescription ?? ''}
+          onClose={() => setScoringSeatId(null)}
+          onSubmit={(score, lostItem, description) => {
+            submitScore({
+              seatId: scoringSeatId,
+              aircraftId: flight.aircraftId,
+              flightId: flight.id,
+              score,
+              lostItem,
+              lostItemDescription: description,
+            });
+            setScoringSeatId(null);
+          }}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   );
 }

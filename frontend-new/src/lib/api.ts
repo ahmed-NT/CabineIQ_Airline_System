@@ -56,6 +56,14 @@ export const aircraftAPI = {
 export const seatsAPI = {
   getSeatMap: (aircraftId: number) =>
     api.get(`/seats/aircraft/${aircraftId}`),
+  getSeatMapWithScores: (aircraftId: number, aircraftCode: string, flightId: number) =>
+    api.get(`/seats/aircraft/${aircraftId}/scored`, {
+      params: { aircraftCode, flightId },
+    }),
+  submitScore: (data: import('@/types').SeatScoreRequest) =>
+    api.post('/seats/score', data, {
+      headers: { 'X-Username': localStorage.getItem('ram_username') || 'staff' },
+    }),
   generateSeats: (data: any) => api.post('/seats/generate', data),
   updateStatus: (seatId: string, aircraftId: number, status: string) =>
     api.put(

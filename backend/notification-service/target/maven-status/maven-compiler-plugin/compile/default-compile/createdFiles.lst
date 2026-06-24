@@ -5,6 +5,7 @@ com\royalairmaroc\notification\config\NotificationSeedData.class
 com\royalairmaroc\notification\dto\CreateNotificationDTO$CreateNotificationDTOBuilder.class
 com\royalairmaroc\notification\service\NotificationService.class
 com\royalairmaroc\notification\dto\NotificationDTO.class
+com\royalairmaroc\notification\service\EmailService.class
 com\royalairmaroc\notification\entity\NotificationType.class
 com\royalairmaroc\notification\dto\CreateNotificationDTO.class
 com\royalairmaroc\notification\entity\Notification$NotificationBuilder.class

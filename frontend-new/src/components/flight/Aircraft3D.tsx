@@ -1,11 +1,17 @@
 import { useMemo, useRef } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 import type { SeatStatus } from '@/types';
-import { TbX, TbArmchair, TbDoorExit, TbBath, TbCoffee } from 'react-icons/tb';
+import { TbX, TbArmchair, TbDoorExit, TbBath, TbCoffee, TbAlertTriangle, TbStarFilled } from 'react-icons/tb';
+
+export interface SeatScoreInfo {
+  score: number;
+  lostItem: boolean;
+}
 
 interface Props {
   occupiedSeats?: string[];
   seatStatuses?: Record<string, SeatStatus>;
+  scoreData?: Record<string, SeatScoreInfo>;
   selectedSeat: string | null;
   totalSeats?: number;
   rows?: number;
@@ -33,6 +39,7 @@ function getClassBg(cls: string, isDark: boolean) {
 export default function Aircraft3D({
   occupiedSeats = [],
   seatStatuses,
+  scoreData,
   selectedSeat,
   rows = 30,
   onSeatClick,
@@ -43,7 +50,6 @@ export default function Aircraft3D({
   const bg = isDark ? '#020617' : '#f1f5f9';
   const panelBg = isDark ? '#0f172a' : '#ffffff';
   const borderColor = isDark ? '#1e293b' : '#e2e8f0';
-  const textPrimary = isDark ? '#f8fafc' : '#0f172a';
   const textSecondary = isDark ? '#64748b' : '#64748b';
   
   const occupiedFill = isDark ? '#334155' : '#cbd5e1';
@@ -163,45 +169,67 @@ export default function Aircraft3D({
         className="flex-shrink-0 flex items-center justify-center gap-6 py-3 border-b shadow-sm z-10"
         style={{ background: panelBg, borderColor }}
       >
-        <div className="flex gap-4 border-r pr-6" style={{ borderColor }}>
-          {[
-            { cls: 'FIRST', label: 'First Class' },
-            { cls: 'BUSINESS', label: 'Business' },
-            { cls: 'ECONOMY', label: 'Economy' },
-          ].map(({ cls, label }) => (
-            <span key={cls} className="flex items-center gap-1.5">
+        <>
+          <div className="flex gap-4 border-r pr-6" style={{ borderColor }}>
+            {[
+              { cls: 'FIRST', label: 'First Class' },
+              { cls: 'BUSINESS', label: 'Business' },
+              { cls: 'ECONOMY', label: 'Economy' },
+            ].map(({ cls, label }) => (
+              <span key={cls} className="flex items-center gap-1.5">
+                <span
+                  className="w-3 h-3 rounded-sm border-2"
+                  style={{ borderColor: getClassColor(cls, isDark), background: getClassBg(cls, isDark) }}
+                />
+                <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
+                  {label}
+                </span>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <span className="flex items-center gap-1.5">
               <span
-                className="w-3 h-3 rounded-sm border-2"
-                style={{ borderColor: getClassColor(cls, isDark), background: getClassBg(cls, isDark) }}
-              />
+                className="w-3 h-3 rounded-sm flex items-center justify-center"
+                style={{ background: occupiedFill }}
+              >
+                <TbX className="w-2.5 h-2.5" style={{ color: occupiedText }} />
+              </span>
               <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
-                {label}
+                Occupied
               </span>
             </span>
-          ))}
-        </div>
-        <div className="flex gap-4">
-          <span className="flex items-center gap-1.5">
-            <span
-              className="w-3 h-3 rounded-sm flex items-center justify-center"
-              style={{ background: occupiedFill }}
-            >
-              <TbX className="w-2.5 h-2.5" style={{ color: occupiedText }} />
+            <span className="flex items-center gap-1.5">
+              <span
+                className="w-3 h-3 rounded-sm border-[2px]"
+                style={{ borderColor: '#38bdf8', background: 'transparent' }}
+              />
+              <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
+                Selected
+              </span>
             </span>
-            <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
-              Occupied
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span
-              className="w-3 h-3 rounded-sm border-[2px]"
-              style={{ borderColor: '#38bdf8', background: 'transparent' }}
-            />
-            <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
-              Selected
-            </span>
-          </span>
-        </div>
+            {scoreData && (
+              <>
+                <span className="flex items-center gap-1.5">
+                  <span className="flex gap-px">
+                    {[1,2,3].map(i => <TbStarFilled key={i} style={{ width: 8, height: 8, color: '#EF9F27' }} />)}
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
+                    Score
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-sm border-2 flex items-center justify-center" style={{ borderColor: '#EF9F27', background: 'transparent' }}>
+                    <TbAlertTriangle style={{ width: 8, height: 8, color: '#EF9F27' }} />
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: textSecondary }}>
+                    Lost Item
+                  </span>
+                </span>
+              </>
+            )}
+          </div>
+        </>
       </div>
 
       {/* Map Container */}
@@ -307,40 +335,53 @@ export default function Aircraft3D({
             const isSelected = selectedSeat === seatId;
             const isOccupied = status === 'OCCUPIED';
             const isUnavailable = status === 'UNAVAILABLE';
-
             const accentColor = getClassColor(cls, isDark);
+            const seatScore = scoreData?.[seatId];
+            const hasLostItem = seatScore?.lostItem === true;
+
             const bgColor = isOccupied ? occupiedFill : isUnavailable ? unavailableFill : getClassBg(cls, isDark);
-            const strokeColor = isSelected ? '#38bdf8' : isOccupied || isUnavailable ? borderColor : accentColor;
+            const strokeColor = isSelected
+              ? '#38bdf8'
+              : hasLostItem
+                ? '#EF9F27'
+                : isOccupied || isUnavailable
+                  ? borderColor
+                  : accentColor;
 
             return (
-              <button
-                key={seatId}
-                onClick={() => onSeatClick?.(seatId)}
-                disabled={!onSeatClick}
-                className="absolute flex items-center justify-center rounded-[6px] transition-all hover:brightness-110 disabled:cursor-default"
-                style={{
-                  left: x,
-                  top: y,
-                  width: w,
-                  height: h,
-                  backgroundColor: bgColor,
-                  border: `2px solid ${strokeColor}`,
-                  boxShadow: isSelected ? `0 0 0 2px ${strokeColor}40` : 'none',
-                  zIndex: isSelected ? 10 : 1,
-                  transform: isSelected ? 'scale(1.05)' : 'none',
-                }}
-              >
-                {/* Armrest visual hints */}
-                {!isOccupied && !isUnavailable && (
-                  <>
-                    <div className="absolute top-1 left-1 bottom-1 w-1 rounded-sm opacity-20" style={{ backgroundColor: accentColor }} />
-                    <div className="absolute top-1 right-1 bottom-1 w-1 rounded-sm opacity-20" style={{ backgroundColor: accentColor }} />
-                  </>
+              <div key={seatId} className="absolute" style={{ left: x, top: y }}>
+                <button
+                  onClick={() => onSeatClick?.(seatId)}
+                  disabled={!onSeatClick}
+                  className="flex items-center justify-center rounded-[6px] transition-all hover:brightness-110 disabled:cursor-default"
+                  style={{
+                    width: w,
+                    height: h,
+                    backgroundColor: bgColor,
+                    border: `2px solid ${strokeColor}`,
+                    boxShadow: isSelected ? `0 0 0 2px ${strokeColor}40` : 'none',
+                    zIndex: isSelected ? 10 : 1,
+                    transform: isSelected ? 'scale(1.05)' : 'none',
+                  }}
+                >
+                  {!isOccupied && !isUnavailable && !hasLostItem && (
+                    <>
+                      <div className="absolute top-1 left-1 bottom-1 w-1 rounded-sm opacity-20" style={{ backgroundColor: accentColor }} />
+                      <div className="absolute top-1 right-1 bottom-1 w-1 rounded-sm opacity-20" style={{ backgroundColor: accentColor }} />
+                    </>
+                  )}
+                  {hasLostItem && <TbAlertTriangle className="w-4 h-4" style={{ color: '#EF9F27' }} />}
+                  {!hasLostItem && isOccupied && <TbX className="w-5 h-5" style={{ color: occupiedText }} />}
+                  {!hasLostItem && isUnavailable && <div className="w-full h-px rotate-45" style={{ backgroundColor: borderColor }} />}
+                </button>
+                {seatScore && seatScore.score > 0 && (
+                  <div className="flex justify-center" style={{ marginTop: 1, width: w, overflow: 'hidden' }}>
+                    {Array.from({ length: seatScore.score }, (_, i) => (
+                      <TbStarFilled key={i} style={{ width: 6, height: 6, minWidth: 6, color: '#EF9F27' }} />
+                    ))}
+                  </div>
                 )}
-
-                {isOccupied && <TbX className="w-5 h-5" style={{ color: occupiedText }} />}
-                {isUnavailable && <div className="w-full h-px rotate-45" style={{ backgroundColor: borderColor }} />}
-              </button>
+              </div>
             );
           })}
         </div>
