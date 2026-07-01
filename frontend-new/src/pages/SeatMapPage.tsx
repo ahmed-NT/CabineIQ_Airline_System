@@ -18,13 +18,6 @@ const CLASS_LABELS: Record<string, string> = {
   ECONOMY: 'Economy',
 };
 
-function getSeatClass(seatId: string): string {
-  const row = parseInt(seatId, 10);
-  if (row <= 2) return 'FIRST';
-  if (row <= 6) return 'BUSINESS';
-  return 'ECONOMY';
-}
-
 export default function SeatMapPage() {
   const { isDark } = useTheme();
   const queryClient = useQueryClient();
@@ -38,20 +31,25 @@ export default function SeatMapPage() {
     queryFn: () => aircraftAPI.getAll().then((r) => r.data),
   });
 
+  // Auto-select first aircraft when list loads (only if user hasn't manually chosen one)
   useEffect(() => {
     if (aircraftList.length > 0 && selectedAircraftId === null) {
       setSelectedAircraftId(aircraftList[0].id);
     }
-  }, [aircraftList, selectedAircraftId]);
+  }, [aircraftList]);
+
+  // Effective ID: use state if set, otherwise first in list (handles first render before effect fires)
+  const effectiveAircraftId = selectedAircraftId ?? (aircraftList[0]?.id ?? null);
 
   const selectedAircraft = aircraftList.find(
-    (a: Aircraft) => a.id === selectedAircraftId
+    (a: Aircraft) => a.id === effectiveAircraftId
   );
 
-  const { data: seatMap, isLoading: seatMapLoading } = useQuery({
-    queryKey: ['seatMap', selectedAircraftId],
-    queryFn: () => seatsAPI.getSeatMap(selectedAircraftId!).then((r) => r.data),
-    enabled: !!selectedAircraftId,
+  const { data: seatMap, isLoading: seatMapLoading, isError: seatMapError } = useQuery({
+    queryKey: ['seatMap', effectiveAircraftId],
+    queryFn: () => seatsAPI.getSeatMap(effectiveAircraftId!).then((r) => r.data),
+    enabled: !!effectiveAircraftId,
+    retry: 1,
   });
 
   const generateSeatsMutation = useMutation({
@@ -59,10 +57,15 @@ export default function SeatMapPage() {
       seatsAPI.generateSeats({
         aircraftId: aircraft.id,
         totalRows: aircraft.totalRows,
+        seatsPerRow: aircraft.seatsPerRow,
         aircraftCode: aircraft.aircraftCode,
+        layoutType: aircraft.layoutType ?? (
+          aircraft.seatsPerRow === 9 ? 'B787_8' :
+          aircraft.seatsPerRow === 4 ? 'ATR72' : 'B737_800'
+        ),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seatMap', selectedAircraftId] });
+      queryClient.invalidateQueries({ queryKey: ['seatMap'] });
     },
     onError: (_error, aircraft) => {
       generatedAircraftIds.current.delete(aircraft.id);
@@ -85,6 +88,9 @@ export default function SeatMapPage() {
     generateSeatsMutation.mutate(selectedAircraft);
   }, [selectedAircraft, seatMap, seatMapLoading, generateSeatsMutation.isPending]);
 
+  // Local override map for instant color feedback before the refetch arrives
+  const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, SeatStatus>>({});
+
   const seatStatuses = useMemo(() => {
     const map: Record<string, SeatStatus> = {};
     seatMap?.rows?.forEach((row: SeatRow) => {
@@ -97,15 +103,37 @@ export default function SeatMapPage() {
     return map;
   }, [seatMap]);
 
+  // Merge server data with local optimistic overrides
+  const mergedStatuses = useMemo<Record<string, SeatStatus>>(
+    () => ({ ...seatStatuses, ...localStatusOverrides }),
+    [seatStatuses, localStatusOverrides]
+  );
+
+  // Real class per row from the seat-map data (FIRST/BUSINESS/ECONOMY)
+  const seatClassByRow = useMemo<Record<number, string>>(() => {
+    const map: Record<number, string> = {};
+    seatMap?.rows?.forEach((row: SeatRow) => {
+      if (row.rowNumber && row.seatClass) {
+        map[row.rowNumber] = row.seatClass;
+      }
+    });
+    return map;
+  }, [seatMap]);
+
+  const getSeatClass = (seatId: string): string => {
+    const row = parseInt(seatId, 10);
+    return seatClassByRow[row] ?? 'ECONOMY';
+  };
+
   const stats = useMemo(() => {
     const counts = { available: 0, occupied: 0, unavailable: 0 };
-    Object.values(seatStatuses).forEach((status) => {
+    Object.values(mergedStatuses).forEach((status) => {
       if (status === 'AVAILABLE') counts.available++;
       else if (status === 'OCCUPIED') counts.occupied++;
       else counts.unavailable++;
     });
     return counts;
-  }, [seatStatuses]);
+  }, [mergedStatuses]);
 
   const updateMutation = useMutation({
     mutationFn: ({
@@ -117,8 +145,21 @@ export default function SeatMapPage() {
       aircraftId: number;
       status: SeatStatus;
     }) => seatsAPI.updateStatus(seatId, aircraftId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seatMap', selectedAircraftId] });
+    onMutate: ({ seatId, status }) => {
+      // Instantly update color without waiting for refetch
+      setLocalStatusOverrides((prev) => ({ ...prev, [seatId]: status }));
+    },
+    onSuccess: (_data, { seatId, status }) => {
+      setLocalStatusOverrides((prev) => ({ ...prev, [seatId]: status }));
+      queryClient.invalidateQueries({ queryKey: ['seatMap'] });
+    },
+    onError: (_err, { seatId }) => {
+      // Revert on failure
+      setLocalStatusOverrides((prev) => {
+        const next = { ...prev };
+        delete next[seatId];
+        return next;
+      });
     },
   });
 
@@ -129,11 +170,11 @@ export default function SeatMapPage() {
   };
 
   const handleStatusChange = (status: SeatStatus) => {
-    if (!selectedSeat || !selectedAircraftId) return;
-    updateMutation.mutate({ seatId: selectedSeat, aircraftId: selectedAircraftId, status });
+    if (!selectedSeat || !effectiveAircraftId) return;
+    updateMutation.mutate({ seatId: selectedSeat, aircraftId: effectiveAircraftId, status });
   };
 
-  const currentSeatStatus = selectedSeat ? seatStatuses[selectedSeat] : null;
+  const currentSeatStatus = selectedSeat ? mergedStatuses[selectedSeat] : null;
   const rows = seatMap?.rows?.length || selectedAircraft?.totalRows || 30;
 
   const sidebarBg = isDark ? '#071628' : 'white';
@@ -392,21 +433,37 @@ export default function SeatMapPage() {
 
       {/* Seat map */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        {seatMapLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm" style={{ color: textMuted }}>Loading seat map...</p>
-          </div>
-        ) : !seatMap ? (
+        {!effectiveAircraftId ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm" style={{ color: textMuted }}>
               Select an aircraft to view its seat map
             </p>
           </div>
+        ) : seatMapLoading ? (
+          <div className="flex-1 flex items-center justify-center gap-2">
+            <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#C41E3A', borderTopColor: 'transparent' }} />
+            <p className="text-sm" style={{ color: textMuted }}>Loading seat map...</p>
+          </div>
+        ) : seatMapError ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-2">
+            <p className="text-sm font-semibold text-red-500">Failed to load seat map</p>
+            <p className="text-xs" style={{ color: textMuted }}>Check that the seat-service backend is running</p>
+            <button
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['seatMap', effectiveAircraftId] })}
+              className="mt-2 px-4 py-1.5 rounded-lg text-xs font-semibold text-white"
+              style={{ background: '#C41E3A' }}
+            >
+              Retry
+            </button>
+          </div>
         ) : (
           <Aircraft3D
-            seatStatuses={seatStatuses}
+            seatStatuses={mergedStatuses}
             selectedSeat={selectedSeat}
             rows={rows}
+            seatsPerRow={selectedAircraft?.seatsPerRow}
+            seatMap={seatMap}
+            layoutType={selectedAircraft?.layoutType}
             onSeatClick={setSelectedSeat}
           />
         )}

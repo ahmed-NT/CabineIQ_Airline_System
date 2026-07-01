@@ -56,6 +56,13 @@ public class PassengerController {
         return ResponseEntity.ok(passengerService.assignSeat(id, seatId, aircraftId));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<PassengerResponseDTO> updatePassenger(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody PassengerRequestDTO dto) {
+        return ResponseEntity.ok(passengerService.updatePassenger(id, dto));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePassenger(@PathVariable("id") Long id) {
         passengerService.deletePassenger(id);

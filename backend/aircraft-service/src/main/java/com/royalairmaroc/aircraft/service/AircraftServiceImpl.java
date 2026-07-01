@@ -25,8 +25,9 @@ public class AircraftServiceImpl implements AircraftService {
             .totalRows(dto.getTotalRows())
             .seatsPerRow(dto.getSeatsPerRow())
             .totalSeats(dto.getTotalSeats())
-            .status(dto.getStatus() != null ? 
-                Aircraft.AircraftStatus.valueOf(dto.getStatus().toUpperCase()) : 
+            .layoutType(dto.getLayoutType())
+            .status(dto.getStatus() != null ?
+                Aircraft.AircraftStatus.valueOf(dto.getStatus().toUpperCase()) :
                 Aircraft.AircraftStatus.ACTIVE)
             .build();
         return mapToDTO(aircraftRepository.save(aircraft));
@@ -61,8 +62,9 @@ public class AircraftServiceImpl implements AircraftService {
         aircraft.setTotalRows(dto.getTotalRows());
         aircraft.setSeatsPerRow(dto.getSeatsPerRow());
         aircraft.setTotalSeats(dto.getTotalSeats());
-        aircraft.setStatus(dto.getStatus() != null ? 
-            Aircraft.AircraftStatus.valueOf(dto.getStatus().toUpperCase()) : 
+        aircraft.setLayoutType(dto.getLayoutType());
+        aircraft.setStatus(dto.getStatus() != null ?
+            Aircraft.AircraftStatus.valueOf(dto.getStatus().toUpperCase()) :
             Aircraft.AircraftStatus.ACTIVE);
         return mapToDTO(aircraftRepository.save(aircraft));
     }
@@ -83,6 +85,7 @@ public class AircraftServiceImpl implements AircraftService {
         dto.setTotalRows(aircraft.getTotalRows());
         dto.setSeatsPerRow(aircraft.getSeatsPerRow());
         dto.setTotalSeats(aircraft.getTotalSeats());
+        dto.setLayoutType(aircraft.getLayoutType());
         dto.setStatus(aircraft.getStatus().name());
         dto.setCreatedAt(aircraft.getCreatedAt());
         dto.setUpdatedAt(aircraft.getUpdatedAt());

@@ -1,9 +1,0 @@
-com\royalairmaroc\ai\dto\ChatMessageDTO.class
-com\royalairmaroc\ai\controller\AiController.class
-com\royalairmaroc\ai\service\AiService.class
-com\royalairmaroc\ai\AiServiceApplication.class
-com\royalairmaroc\ai\dto\AiQueryResponse.class
-com\royalairmaroc\ai\dto\AiQueryResponse$AiQueryResponseBuilder.class
-com\royalairmaroc\ai\dto\AiQueryRequest$AiQueryRequestBuilder.class
-com\royalairmaroc\ai\dto\AiQueryRequest.class
-com\royalairmaroc\ai\dto\ChatMessageDTO$ChatMessageDTOBuilder.class

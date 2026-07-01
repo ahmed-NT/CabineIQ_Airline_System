@@ -105,6 +105,19 @@ public class PassengerServiceImpl implements PassengerService {
     }
 
     @Override
+    public PassengerResponseDTO updatePassenger(Long id, PassengerRequestDTO dto) {
+        Passenger passenger = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Passenger not found"));
+        passenger.setFirstName(dto.getFirstName());
+        passenger.setLastName(dto.getLastName());
+        passenger.setEmail(dto.getEmail());
+        passenger.setPassportNumber(dto.getPassportNumber());
+        passenger.setNationality(dto.getNationality());
+        if (dto.getFlightId() != null) passenger.setFlightId(dto.getFlightId());
+        return mapToDTO(repository.save(passenger));
+    }
+
+    @Override
     public void deletePassenger(Long id) {
         if (!repository.existsById(id)) {
             throw new RuntimeException("Passenger not found");

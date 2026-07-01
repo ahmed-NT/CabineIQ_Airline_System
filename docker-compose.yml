@@ -146,6 +146,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/flight_db
       PASSENGER_SERVICE_URL: http://passenger-service:8083
       NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      AVIATIONSTACK_API_KEY: ${AVIATIONSTACK_API_KEY:-c10d8157e19b8c398706bbc004f4ec2a}
     depends_on:
       mysql:
         condition: service_healthy

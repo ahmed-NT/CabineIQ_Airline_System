@@ -6,7 +6,7 @@ import type { Passenger, Flight } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import ExpandableSearch from '@/components/dashboard/ExpandableSearch';
 import PassengerProfilePanel from '@/components/passengers/PassengerProfilePanel';
-import { TbUsers, TbChevronDown, TbPlane, TbPlus, TbTrash, TbX } from 'react-icons/tb';
+import { TbUsers, TbChevronDown, TbPlane, TbPlus, TbTrash, TbX, TbEdit } from 'react-icons/tb';
 
 const EMPTY_PASSENGER = {
   firstName: '',
@@ -39,6 +39,8 @@ export default function PassengersPage() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY_PASSENGER);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [editPassenger, setEditPassenger] = useState<Passenger | null>(null);
+  const [editForm, setEditForm] = useState(EMPTY_PASSENGER);
 
   const { data: passengers = [], isLoading } = useQuery({
     queryKey: ['passengers'],
@@ -61,6 +63,19 @@ export default function PassengersPage() {
       queryClient.invalidateQueries({ queryKey: ['passengers'] });
       setShowModal(false);
       setForm(EMPTY_PASSENGER);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: typeof EMPTY_PASSENGER) =>
+      passengersAPI.update(editPassenger!.id, {
+        ...data,
+        flightId: Number(data.flightId) || undefined,
+        aircraftId: editPassenger!.aircraftId || undefined,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['passengers'] });
+      setEditPassenger(null);
     },
   });
 
@@ -323,6 +338,26 @@ export default function PassengersPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              setEditPassenger(passenger);
+                              setEditForm({
+                                firstName: passenger.firstName,
+                                lastName: passenger.lastName,
+                                email: passenger.email ?? '',
+                                passportNumber: passenger.passportNumber,
+                                nationality: passenger.nationality ?? '',
+                                flightId: String(passenger.flightId ?? ''),
+                                seatId: passenger.seatId ?? '',
+                                aircraftId: String(passenger.aircraftId ?? ''),
+                              });
+                            }}
+                            className="p-1 rounded transition-opacity hover:opacity-80"
+                            style={{ color: '#38bdf8' }}
+                          >
+                            <TbEdit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setDeleteId(passenger.id);
                             }}
                             className="p-1 rounded transition-opacity hover:opacity-80"
@@ -411,6 +446,69 @@ export default function PassengersPage() {
               style={{ background: '#C41E3A' }}
             >
               {createMutation.isPending ? 'Adding…' : 'Add Passenger'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Passenger Modal */}
+      {editPassenger && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)' }}>
+          <div className="w-full max-w-md rounded-2xl border p-6 space-y-4"
+            style={{ background: isDark ? '#071628' : 'white', borderColor: isDark ? '#1a3050' : '#e5e7eb' }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold" style={{ color: isDark ? 'white' : '#1a1a2e' }}>Edit Passenger</h2>
+              <button onClick={() => setEditPassenger(null)}>
+                <TbX className="w-5 h-5" style={{ color: textMuted }} />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ['First Name', 'firstName'],
+                ['Last Name', 'lastName'],
+                ['Email', 'email', 'email'],
+                ['Passport No.', 'passportNumber'],
+                ['Nationality', 'nationality'],
+              ] as [string, keyof typeof EMPTY_PASSENGER, string?][]).map(([label, key, type]) => (
+                <div key={key}>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: textMuted }}>
+                    {label}
+                  </label>
+                  <input
+                    type={type ?? 'text'}
+                    value={editForm[key]}
+                    onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                    style={{ background: isDark ? '#0a1e38' : '#f9fafb', borderColor: isDark ? '#1a3050' : '#e5e7eb', color: isDark ? 'white' : '#1a1a2e' }}
+                  />
+                </div>
+              ))}
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: textMuted }}>Flight</label>
+              <select
+                value={editForm.flightId}
+                onChange={(e) => setEditForm((f) => ({ ...f, flightId: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+                style={{ background: isDark ? '#0a1e38' : '#f9fafb', borderColor: isDark ? '#1a3050' : '#e5e7eb', color: isDark ? 'white' : '#1a1a2e' }}
+              >
+                <option value="">No flight</option>
+                {(flights as Flight[]).map((f) => (
+                  <option key={f.id} value={f.id}>{f.flightNumber} — {f.origin}→{f.destination}</option>
+                ))}
+              </select>
+            </div>
+            {updateMutation.isError && (
+              <p className="text-xs text-red-400">Failed to update passenger.</p>
+            )}
+            <button
+              onClick={() => updateMutation.mutate(editForm)}
+              disabled={!editForm.firstName || !editForm.lastName || !editForm.passportNumber || updateMutation.isPending}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-40"
+              style={{ background: '#C41E3A' }}
+            >
+              {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>

@@ -19,5 +19,7 @@ public class AircraftRequestDTO {
     private Integer seatsPerRow;
     @NotNull
     private Integer totalSeats;
+    @NotBlank
+    private String layoutType;
     private String status = "ACTIVE";
 }

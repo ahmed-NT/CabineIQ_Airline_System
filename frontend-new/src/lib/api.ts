@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const mlClient = axios.create({
-  baseURL: 'http://localhost:8087',
+  baseURL: '/api/ml',
   headers: { 'Content-Type': 'application/json' },
   timeout: 5000,
 });
@@ -9,6 +9,7 @@ const mlClient = axios.create({
 const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
 });
 
 api.interceptors.request.use((config) => {
@@ -36,14 +37,21 @@ export const authAPI = {
   login: (username: string, password: string) =>
     api.post('/auth/login', { username, password }),
   register: (data: any) => api.post('/auth/register', data),
+  getUsers: () => api.get('/auth/users'),
+  deleteUser: (id: number) => api.delete(`/auth/users/${id}`),
+  changePassword: (id: number, newPassword: string) =>
+    api.patch(`/auth/users/${id}/password`, { newPassword }),
 };
 
 export const flightsAPI = {
   getAll: () => api.get('/flights'),
+  getLive: () => api.get('/flights/live'),
+  getRoutes: () => api.get('/flights/routes'),
   getById: (id: number) => api.get(`/flights/${id}`),
   updateStatus: (id: number, status: string) =>
     api.patch(`/flights/${id}/status?status=${status}`),
   create: (data: any) => api.post('/flights', data),
+  update: (id: number, data: any) => api.put(`/flights/${id}`, data),
   delete: (id: number) => api.delete(`/flights/${id}`),
 };
 
@@ -51,6 +59,8 @@ export const aircraftAPI = {
   getAll: () => api.get('/aircraft'),
   getById: (id: number) => api.get(`/aircraft/${id}`),
   create: (data: any) => api.post('/aircraft', data),
+  update: (id: number, data: any) => api.put(`/aircraft/${id}`, data),
+  delete: (id: number) => api.delete(`/aircraft/${id}`),
 };
 
 export const seatsAPI = {
@@ -65,6 +75,7 @@ export const seatsAPI = {
       headers: { 'X-Username': localStorage.getItem('ram_username') || 'staff' },
     }),
   generateSeats: (data: any) => api.post('/seats/generate', data),
+  deleteSeats: (aircraftId: number) => api.delete(`/seats/aircraft/${aircraftId}`),
   updateStatus: (seatId: string, aircraftId: number, status: string) =>
     api.put(
       `/seats/${encodeURIComponent(seatId)}/status`,
@@ -83,6 +94,7 @@ export const passengersAPI = {
   create: (data: any) => api.post('/passengers', data),
   assignSeat: (id: number, seatId: string, aircraftId: number) =>
     api.put(`/passengers/${id}/assign-seat`, { seatId, aircraftId }),
+  update: (id: number, data: any) => api.put(`/passengers/${id}`, data),
   delete: (id: number) => api.delete(`/passengers/${id}`),
 };
 

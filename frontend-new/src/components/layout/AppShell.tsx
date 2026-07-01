@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { flightsAPI } from '@/lib/api';
+import type { Flight } from '@/types';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +21,7 @@ import ChatPanel from '@/components/chat/ChatPanel';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import UnreadBadge from '@/components/notifications/UnreadBadge';
 import { useNotifications } from '@/components/notifications/useNotifications';
+import FeedbackPopup from '@/components/feedback/FeedbackPopup';
 
 const navItems = [
   { icon: TbWorld, path: '/', label: 'Dashboard' },
@@ -37,11 +41,21 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggle } = useTheme();
-  const { username, logout, isCrew } = useAuth();
+  const { username, logout, isCrew, isAdmin } = useAuth();
   const [chatOpen, setChatOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { notifications, unreadCount, markAllRead, markRead, shakeBell } =
     useNotifications();
+
+  const { data: flights = [] } = useQuery({
+    queryKey: ['flights'],
+    queryFn: () => flightsAPI.getAll().then((r) => r.data),
+    refetchInterval: 30000, // re-fetch every 30 seconds
+  });
+
+  const statusCount = (status: string) =>
+    (flights as Flight[]).filter((f) => f.status === status).length;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -63,39 +77,33 @@ export default function AppShell() {
         <div className="flex items-center gap-6">
           <img src="/ram-logo.png" alt="RAM" className="h-7 object-contain" />
           <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8]" />
-              <span className={isDark ? 'text-[#4a7aab]' : 'text-gray-500'}>
-                2 Departed
-              </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#a78bfa]" />
-              <span className={isDark ? 'text-[#4a7aab]' : 'text-gray-500'}>
-                1 Boarding
-              </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#fbbf24]" />
-              <span className={isDark ? 'text-[#4a7aab]' : 'text-gray-500'}>
-                1 Delayed
-              </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#f87171]" />
-              <span className={isDark ? 'text-[#4a7aab]' : 'text-gray-500'}>
-                1 Cancelled
-              </span>
-            </span>
+            {[
+              { status: 'SCHEDULED', color: '#6b7280',  label: 'Scheduled' },
+              { status: 'BOARDING',  color: '#a78bfa',  label: 'Boarding'  },
+              { status: 'DEPARTED',  color: '#38bdf8',  label: 'Departed'  },
+              { status: 'ARRIVED',   color: '#22c55e',  label: 'Arrived'   },
+              { status: 'DELAYED',   color: '#fbbf24',  label: 'Delayed'   },
+              { status: 'CANCELLED', color: '#f87171',  label: 'Cancelled' },
+            ].map(({ status, color, label }) => {
+              const count = statusCount(status);
+              return (
+                <span key={status} className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                  <span className={isDark ? 'text-[#4a7aab]' : 'text-gray-500'}>
+                    {count} {label}
+                  </span>
+                </span>
+              );
+            })}
           </div>
         </div>
 
         {/* Right: LIVE + Bell + User + Toggle */}
         <div className="flex items-center gap-4">
           {/* LIVE badge */}
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#0d2a1a] border border-[#0f4a1a]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse-dot" />
-            <span className="text-[#4ade80] text-xs font-medium tracking-wider">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#C41E3A] border border-[#e0354f]">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse-dot" />
+            <span className="text-white text-xs font-medium tracking-wider">
               LIVE
             </span>
           </div>
@@ -193,9 +201,16 @@ export default function AppShell() {
             {(isCrew ? [] : bottomItems).map(({ icon: Icon, path, label }) => (
               <button
                 key={path}
-                onClick={() => navigate(path)}
+                onClick={() => {
+                  if (path === '/feedback' && isAdmin) {
+                    setFeedbackOpen(true);
+                  } else {
+                    navigate(path);
+                  }
+                }}
                 title={label}
-                className={`relative w-11 h-11 flex items-center justify-center transition-colors group ${isActive(path)
+                className={`relative w-11 h-11 flex items-center justify-center transition-colors group ${
+                  (isActive(path) || (path === '/feedback' && feedbackOpen))
                     ? isDark
                       ? 'bg-[#0d2040] text-[#38bdf8]'
                       : 'bg-blue-50 text-blue-500'
@@ -204,7 +219,7 @@ export default function AppShell() {
                       : 'text-gray-400 hover:bg-gray-200/70 hover:text-gray-600'
                   }`}
               >
-                {isActive(path) && (
+                {(isActive(path) || (path === '/feedback' && feedbackOpen)) && (
                   <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r
                     ${isDark ? 'bg-[#38bdf8]' : 'bg-blue-500'}
                   `} />
@@ -244,6 +259,9 @@ export default function AppShell() {
 
       {/* AI Chat Panel */}
       {chatOpen && <ChatPanel onClose={() => setChatOpen(false)} />}
+
+      {/* Admin Feedback Popup */}
+      {feedbackOpen && <FeedbackPopup onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }

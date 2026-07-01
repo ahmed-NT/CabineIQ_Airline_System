@@ -36,6 +36,10 @@ public class Aircraft {
     @Column(nullable = false)
     private Integer totalSeats;
 
+    // e.g. B737_800, B737_MAX8, B787_8, B787_9, ATR72
+    @Column(nullable = false)
+    private String layoutType;
+
     @Enumerated(EnumType.STRING)
     private AircraftStatus status;
 

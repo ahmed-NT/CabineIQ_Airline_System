@@ -12,6 +12,7 @@ public class AircraftResponseDTO {
     private Integer totalRows;
     private Integer seatsPerRow;
     private Integer totalSeats;
+    private String layoutType;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

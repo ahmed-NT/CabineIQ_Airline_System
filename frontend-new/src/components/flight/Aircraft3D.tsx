@@ -15,10 +15,14 @@ interface Props {
   selectedSeat: string | null;
   totalSeats?: number;
   rows?: number;
+  seatsPerRow?: number;
+  seatMap?: any;
+  layoutType?: string;
   onSeatClick?: (seatId: string) => void;
 }
 
-function getClass(row: number) {
+function getClass(row: number, rowClassMap?: Map<number, string>) {
+  if (rowClassMap?.has(row)) return rowClassMap.get(row)!;
   if (row <= 2) return 'FIRST';
   if (row <= 6) return 'BUSINESS';
   return 'ECONOMY';
@@ -36,12 +40,29 @@ function getClassBg(cls: string, isDark: boolean) {
   return isDark ? '#1e293b' : '#f8fafc';
 }
 
+// Derive seat letters directly from a known layoutType (used before seatMap loads)
+function getLettersForLayout(layoutType?: string): string[] | null {
+  switch (layoutType?.toUpperCase()) {
+    case 'B737_800': case 'B737_MAX8': case 'B737':
+      return ['A','B','C','D','E','F'];
+    case 'B787_8': case 'B787_9':
+      return ['A','B','C','D','E','F','G','H','J'];
+    case 'ATR72':
+      return ['A','B','C','D'];
+    default:
+      return null;
+  }
+}
+
 export default function Aircraft3D({
   occupiedSeats = [],
   seatStatuses,
   scoreData,
   selectedSeat,
   rows = 30,
+  seatsPerRow,
+  seatMap,
+  layoutType,
   onSeatClick,
 }: Props) {
   const { isDark } = useTheme();
@@ -54,29 +75,94 @@ export default function Aircraft3D({
   
   const occupiedFill = isDark ? '#334155' : '#cbd5e1';
   const occupiedText = isDark ? '#94a3b8' : '#64748b';
-  const unavailableFill = isDark ? '#1e293b' : '#f1f5f9';
 
-  // Seat layout math (Vertical)
-  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-  
+  // ── Detect layout from seat letters in first row ───────────────────────────
+  // Narrow (6):  A B C | D E F          → 1 aisle after col 2
+  // Wide   (9):  A B C | D E F G | H J  → 2 aisles after col 2 and col 6
+  // Regional(4): A B | C D              → 1 aisle after col 1
+  // Build row→class map from actual seat data
+  const rowClassMap = useMemo<Map<number, string>>(() => {
+    const map = new Map<number, string>();
+    if (seatMap?.rows) {
+      for (const row of seatMap.rows) {
+        if (row.rowNumber && row.seatClass) {
+          map.set(row.rowNumber, row.seatClass);
+        }
+      }
+    }
+    return map;
+  }, [seatMap]);
+
+  const allLettersInMap = useMemo(() => {
+    // Priority 1: seatsPerRow from aircraft entity — always in DB, always correct
+    if (seatsPerRow === 9) return ['A','B','C','D','E','F','G','H','J'];
+    if (seatsPerRow === 4) return ['A','B','C','D'];
+    if (seatsPerRow === 6) return ['A','B','C','D','E','F'];
+
+    // Priority 2: layoutType string
+    const fromLayout = getLettersForLayout(layoutType);
+    if (fromLayout) return fromLayout;
+
+    // Priority 3: seatLetter values from seat map rows
+    if (seatMap?.rows && seatMap.rows.length > 0) {
+      const widestRow = seatMap.rows.reduce((max: any, row: any) =>
+        row.seats.length > max.seats.length ? row : max, seatMap.rows[0]);
+      const letters = widestRow.seats.map((s: any) => s.seatLetter).filter(Boolean);
+      if (letters.length > 0) return letters;
+    }
+
+    return ['A','B','C','D','E','F'];
+  }, [seatMap, layoutType, seatsPerRow]);
+
+  const letters = allLettersInMap.length > 0 ? allLettersInMap : ['A','B','C','D','E','F'];
+  const colCount = letters.length;
+
+  // Aisle positions: index AFTER which an aisle appears
+  // Letters: A=0 B=1 C=2 D=3 E=4 F=5 G=6 H=7 J=8
+  const aisleAfter: number[] = colCount === 9
+    ? [2, 5]   // 3+3+3 (wide body): aisles after C(2) and F(5)
+    : colCount === 4
+    ? [1]      // 2+2 (regional): aisle after B(1)
+    : [2];     // 3+3 (narrow): aisle after C(2)
+
   // X coordinates (Columns)
-  const SEAT_W = 32;
+  const SEAT_W = colCount >= 9 ? 26 : 32;
   const SEAT_GAP_X = 6;
   const AISLE_W = 34;
   const SIDE_PADDING = 30;
 
   const getX = (colIdx: number) => {
     let x = SIDE_PADDING;
-    if (colIdx < 3) {
-      x += colIdx * (SEAT_W + SEAT_GAP_X);
-    } else {
-      x += 3 * (SEAT_W + SEAT_GAP_X) + AISLE_W - SEAT_GAP_X + (colIdx - 3) * (SEAT_W + SEAT_GAP_X);
+    let aisleCount = 0;
+    for (let i = 0; i < colIdx; i++) {
+      x += SEAT_W + SEAT_GAP_X;
+      if (aisleAfter.includes(i)) { x += AISLE_W - SEAT_GAP_X; aisleCount++; }
     }
     return x;
   };
 
-  const aisleX = SIDE_PADDING + 3 * (SEAT_W + SEAT_GAP_X) - SEAT_GAP_X;
-  const fuselageW = SIDE_PADDING * 2 + 6 * SEAT_W + 5 * SEAT_GAP_X + AISLE_W;
+  const aisleXList = aisleAfter.map((afterIdx) => {
+    let x = SIDE_PADDING;
+    for (let i = 0; i <= afterIdx; i++) {
+      x += SEAT_W + SEAT_GAP_X;
+      if (i < afterIdx && aisleAfter.includes(i)) x += AISLE_W - SEAT_GAP_X;
+    }
+    return x - SEAT_GAP_X;
+  });
+
+  const fuselageW = SIDE_PADDING * 2 + colCount * SEAT_W + (colCount - 1) * SEAT_GAP_X + AISLE_W * aisleAfter.length;
+
+  // Detect class-change rows for dividers
+  const classDividerRows = useMemo(() => {
+    const dividers = new Set<number>();
+    let prev = '';
+    for (let r = 1; r <= rows; r++) {
+      const cls = getClass(r, rowClassMap);
+      if (prev && cls !== prev) dividers.add(r);
+      prev = cls;
+    }
+    return dividers;
+  }, [rowClassMap, rows]);
 
   // Y coordinates (Rows)
   const getRowY = (row: number) => {
@@ -84,28 +170,29 @@ export default function Aircraft3D({
     y += 80; // Front galley/lavatory space
 
     for (let i = 1; i < row; i++) {
-      if (i === 1 || i === 2) y += 44; // First Class
-      else if (i <= 6) y += 40; // Business
-      else y += 36; // Economy
+      const cls = getClass(i, rowClassMap);
+      if (cls === 'FIRST') y += 44;
+      else if (cls === 'BUSINESS') y += 40;
+      else y += 36;
 
-      // Facilities and dividers
-      if (i === 2) y += 80; // divider
-      if (i === 6) y += 80; // divider
-      if (i === 15) y += 60; // emergency exit
+      // Dividers at class boundaries + emergency exit mid-economy
+      if (classDividerRows.has(i + 1)) y += 80;
+      if (i === 15 && getClass(i, rowClassMap) === 'ECONOMY') y += 60;
     }
     return y;
   };
 
   const getSeatHeight = (row: number) => {
-    if (row <= 2) return 36;
-    if (row <= 6) return 32;
+    const cls = getClass(row, rowClassMap);
+    if (cls === 'FIRST') return 36;
+    if (cls === 'BUSINESS') return 32;
     return 28;
   };
 
   const allSeats = useMemo(() => {
     const seats = [];
     for (let r = 1; r <= rows; r++)
-      for (let c = 0; c < 6; c++) {
+      for (let c = 0; c < colCount; c++) {
         const seatId = `${r}${letters[c]}`;
         let status: SeatStatus = 'AVAILABLE';
         if (seatStatuses?.[seatId]) status = seatStatuses[seatId];
@@ -115,11 +202,11 @@ export default function Aircraft3D({
           row: r,
           col: c,
           status,
-          cls: getClass(r),
+          cls: getClass(r, rowClassMap),
         });
       }
     return seats;
-  }, [occupiedSeats, seatStatuses, rows]);
+  }, [occupiedSeats, seatStatuses, rows, colCount, letters, rowClassMap]);
 
   const canvasH = getRowY(rows) + 120;
 
@@ -251,29 +338,14 @@ export default function Aircraft3D({
           <div className="absolute top-0 left-0 w-full rounded-t-[40px]" style={{ height: 60, backgroundColor: 'rgba(0,0,0,0.02)' }} />
           <div className="absolute bottom-0 left-0 w-full rounded-b-[40px]" style={{ height: 60, backgroundColor: 'rgba(0,0,0,0.02)' }} />
 
-          {/* Letter labels (Left) */}
-          {letters.slice(0, 3).map((l, i) => (
+          {/* Letter labels — all columns dynamically */}
+          {letters.map((l: string, i: number) => (
             <div
-              key={`label-l-${l}`}
+              key={`label-${l}`}
               className="absolute text-[11px] font-bold"
               style={{
                 top: 24,
                 left: getX(i) + SEAT_W / 2 - 4,
-                color: textSecondary,
-              }}
-            >
-              {l}
-            </div>
-          ))}
-          
-          {/* Letter labels (Right) */}
-          {letters.slice(3, 6).map((l, i) => (
-            <div
-              key={`label-r-${l}`}
-              className="absolute text-[11px] font-bold"
-              style={{
-                top: 24,
-                left: getX(i + 3) + SEAT_W / 2 - 4,
                 color: textSecondary,
               }}
             >
@@ -288,14 +360,19 @@ export default function Aircraft3D({
           {renderExit(130, true)}
           {renderExit(130, false)}
 
-          {/* Mid 1 (After First) */}
-          {renderFacility(SIDE_PADDING, getRowY(3) - 60, SEAT_W * 2 + SEAT_GAP_X, 40, 'closet', 'Coat')}
-          
-          {/* Mid 2 (After Business) */}
-          {renderFacility(SIDE_PADDING, getRowY(7) - 65, SEAT_W * 2 + SEAT_GAP_X, 45, 'lavatory', 'WC')}
-          {renderFacility(fuselageW - SIDE_PADDING - SEAT_W * 2 - SEAT_GAP_X, getRowY(7) - 65, SEAT_W * 2 + SEAT_GAP_X, 45, 'lavatory', 'WC')}
-          {renderExit(getRowY(7) - 20, true)}
-          {renderExit(getRowY(7) - 20, false)}
+          {/* Mid facilities — placed at actual class divider boundaries */}
+          {(() => {
+            const dividers = Array.from(classDividerRows).sort((a, b) => a - b);
+            const d1 = dividers[0]; // first class change (e.g. row 5 for B737, row 7 for B787_9)
+            const d2 = dividers[1]; // second class change if any (e.g. row 13 for B787_9)
+            return <>
+              {d1 && renderFacility(SIDE_PADDING, getRowY(d1) - 60, SEAT_W * 2 + SEAT_GAP_X, 40, 'closet', 'Coat')}
+              {d2 && renderFacility(SIDE_PADDING, getRowY(d2) - 65, SEAT_W * 2 + SEAT_GAP_X, 45, 'lavatory', 'WC')}
+              {d2 && renderFacility(fuselageW - SIDE_PADDING - SEAT_W * 2 - SEAT_GAP_X, getRowY(d2) - 65, SEAT_W * 2 + SEAT_GAP_X, 45, 'lavatory', 'WC')}
+              {d2 && renderExit(getRowY(d2) - 20, true)}
+              {d2 && renderExit(getRowY(d2) - 20, false)}
+            </>;
+          })()}
 
           {/* Mid 3 (Emergency Exit) */}
           {renderExit(getRowY(16) - 30, true)}
@@ -305,26 +382,30 @@ export default function Aircraft3D({
           {renderFacility(SIDE_PADDING, getRowY(rows) + 50, SEAT_W * 3 + SEAT_GAP_X * 2, 50, 'lavatory', 'WC')}
           {renderFacility(fuselageW - SIDE_PADDING - SEAT_W * 3 - SEAT_GAP_X * 2, getRowY(rows) + 50, SEAT_W * 3 + SEAT_GAP_X * 2, 50, 'galley', 'Galley')}
 
-          {/* Class Dividers */}
-          <div className="absolute border-t-2 border-dashed w-full" style={{ left: 0, top: getRowY(3) - 40, borderColor: isDark ? '#334155' : '#cbd5e1' }} />
-          <div className="absolute border-t-2 border-dashed w-full" style={{ left: 0, top: getRowY(7) - 40, borderColor: isDark ? '#334155' : '#cbd5e1' }} />
-
-          {/* Row Numbers in Aisle */}
-          {Array.from({ length: rows }, (_, i) => (
-            <div
-              key={`row-num-${i}`}
-              className="absolute flex items-center justify-center font-bold text-[11px]"
-              style={{
-                top: getRowY(i + 1),
-                left: aisleX,
-                width: AISLE_W,
-                height: getSeatHeight(i + 1),
-                color: isDark ? '#475569' : '#94a3b8',
-              }}
-            >
-              {i + 1}
-            </div>
+          {/* Class Dividers — dynamic based on actual seat classes */}
+          {Array.from(classDividerRows).map((r) => (
+            <div key={`divider-${r}`} className="absolute border-t-2 border-dashed w-full"
+              style={{ left: 0, top: getRowY(r) - 40, borderColor: isDark ? '#334155' : '#cbd5e1' }} />
           ))}
+
+          {/* Row Numbers in Aisle(s) */}
+          {aisleXList.map((ax, ai) =>
+            Array.from({ length: rows }, (_, i) => (
+              <div
+                key={`row-num-${ai}-${i}`}
+                className="absolute flex items-center justify-center font-bold text-[11px]"
+                style={{
+                  top: getRowY(i + 1),
+                  left: ax,
+                  width: AISLE_W,
+                  height: getSeatHeight(i + 1),
+                  color: isDark ? '#475569' : '#94a3b8',
+                }}
+              >
+                {ai === 0 ? i + 1 : ''}
+              </div>
+            ))
+          )}
 
           {/* Seats */}
           {allSeats.map(({ seatId, row, col, status, cls }) => {
@@ -332,6 +413,12 @@ export default function Aircraft3D({
             const x = getX(col);
             const h = getSeatHeight(row);
             const w = SEAT_W;
+
+            // If seatStatuses is loaded but this seat isn't in it → doesn't exist in DB
+            const hasSeatData = Object.keys(seatStatuses ?? {}).length > 0;
+            const existsInDB = !hasSeatData || (seatStatuses ?? {})[seatId] !== undefined;
+            if (!existsInDB) return null;
+
             const isSelected = selectedSeat === seatId;
             const isOccupied = status === 'OCCUPIED';
             const isUnavailable = status === 'UNAVAILABLE';
@@ -339,14 +426,24 @@ export default function Aircraft3D({
             const seatScore = scoreData?.[seatId];
             const hasLostItem = seatScore?.lostItem === true;
 
-            const bgColor = isOccupied ? occupiedFill : isUnavailable ? unavailableFill : getClassBg(cls, isDark);
+            // Seat color by status
+            const bgColor = isSelected
+              ? '#38bdf820'
+              : isOccupied
+              ? (isDark ? '#7f1d1d' : '#fee2e2')
+              : isUnavailable
+              ? (isDark ? '#1e293b' : '#f1f5f9')
+              : getClassBg(cls, isDark);
+
             const strokeColor = isSelected
               ? '#38bdf8'
               : hasLostItem
-                ? '#EF9F27'
-                : isOccupied || isUnavailable
-                  ? borderColor
-                  : accentColor;
+              ? '#EF9F27'
+              : isOccupied
+              ? '#ef4444'
+              : isUnavailable
+              ? (isDark ? '#334155' : '#cbd5e1')
+              : accentColor;
 
             return (
               <div key={seatId} className="absolute" style={{ left: x, top: y }}>
@@ -371,8 +468,8 @@ export default function Aircraft3D({
                     </>
                   )}
                   {hasLostItem && <TbAlertTriangle className="w-4 h-4" style={{ color: '#EF9F27' }} />}
-                  {!hasLostItem && isOccupied && <TbX className="w-5 h-5" style={{ color: occupiedText }} />}
-                  {!hasLostItem && isUnavailable && <div className="w-full h-px rotate-45" style={{ backgroundColor: borderColor }} />}
+                  {!hasLostItem && isOccupied && <TbX className="w-5 h-5" style={{ color: '#ef4444' }} />}
+                  {!hasLostItem && isUnavailable && <div className="w-3 h-0.5 rotate-45 rounded" style={{ backgroundColor: isDark ? '#475569' : '#94a3b8' }} />}
                 </button>
                 {seatScore && seatScore.score > 0 && (
                   <div className="flex justify-center" style={{ marginTop: 1, width: w, overflow: 'hidden' }}>

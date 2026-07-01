@@ -55,7 +55,7 @@ def load_feedback_df():
                experience_vs_expectation, comfort_rating, service_rating,
                return_intent, next_travel_window, booking_decision_factor,
                loyalty_sensitive, seat_class, departure_hour, occupancy_pct,
-               purchase_intent_score, offer_clicked, route
+               purchase_intent_score, CAST(offer_clicked AS UNSIGNED) AS offer_clicked, route
         FROM feedback
         WHERE purchase_intent_score IS NOT NULL
     """

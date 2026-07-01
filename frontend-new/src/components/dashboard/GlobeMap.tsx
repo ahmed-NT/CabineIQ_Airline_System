@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { Flight } from '@/types';
 import { getFlightArc, AIRPORTS } from '@/data/airports';
+import { flightsAPI } from '@/lib/api';
 import { useTheme } from '@/hooks/useTheme';
 
 interface Props {
@@ -8,13 +10,24 @@ interface Props {
   hoveredFlight: Flight | null;
 }
 
+// Arc colour by real flight status — matches the live status legend.
 const ARC_COLORS: Record<string, string> = {
-  DEPARTED:  '#38bdf8',
-  ARRIVED:   '#4ade80',
+  SCHEDULED: '#6b7280',
   BOARDING:  '#a78bfa',
-  SCHEDULED: '#4ade80',
+  DEPARTED:  '#38bdf8',
+  ARRIVED:   '#22c55e',
   DELAYED:   '#fbbf24',
-  CANCELLED: '#4b5563',
+  CANCELLED: '#f87171',
+  ROUTE:     '#C41E3A',
+};
+
+const AVIATIONSTACK_STATUS_MAP: Record<string, string> = {
+  scheduled: 'SCHEDULED',
+  active: 'DEPARTED',
+  landed: 'ARRIVED',
+  cancelled: 'CANCELLED',
+  incident: 'DELAYED',
+  diverted: 'DELAYED',
 };
 
 export default function GlobeMap({ flights, hoveredFlight }: Props) {
@@ -83,7 +96,7 @@ export default function GlobeMap({ flights, hoveredFlight }: Props) {
 
   const arcs = useMemo(() => {
     return flights
-      .filter(f => f.status !== 'CANCELLED')
+      .filter(f => f.status !== 'CANCELLED' && f.status !== 'ARRIVED')
       .map(f => {
         const arc = getFlightArc(f.origin, f.destination);
         if (!arc) return null;
@@ -92,12 +105,48 @@ export default function GlobeMap({ flights, hoveredFlight }: Props) {
           flightId: f.id,
           flightNumber: f.flightNumber,
           status: f.status,
-          color: ARC_COLORS[f.status] || '#4ade80',
+          color: ARC_COLORS[f.status] || '#6b7280',
           isHovered: hoveredFlight?.id === f.id,
         };
       })
       .filter(Boolean);
   }, [flights, hoveredFlight]);
+
+  // AviationStack routes for Royal Air Maroc, refreshed every 5 min.
+  const { data: aviationRoutes = [] } = useQuery({
+    queryKey: ['aviation-routes'],
+    queryFn: () => flightsAPI.getRoutes().then((r) => r.data),
+    refetchInterval: 300000,
+    retry: false,
+  });
+
+  // AviationStack routes rendered as arcs (RAM network from real API data).
+  const routeArcs = useMemo(() => {
+    const dbIatas = new Set(flights.map(f => `${f.origin}-${f.destination}`));
+    return (aviationRoutes as any[])
+      .filter((r) => {
+        if (!r.departureIata || !r.arrivalIata) return false;
+        if (dbIatas.has(`${r.departureIata}-${r.arrivalIata}`)) return false;
+        const src = AIRPORTS[r.departureIata];
+        const dst = AIRPORTS[r.arrivalIata];
+        return src && dst;
+      })
+      .map((r) => {
+        const src = AIRPORTS[r.departureIata];
+        const dst = AIRPORTS[r.arrivalIata];
+        const mappedStatus = AVIATIONSTACK_STATUS_MAP[r.flightStatus] || 'SCHEDULED';
+        return {
+          startLat: src.lat, startLng: src.lng,
+          endLat: dst.lat, endLng: dst.lng,
+          status: mappedStatus,
+          color: ARC_COLORS[mappedStatus] || ARC_COLORS.ROUTE,
+          flightNumber: r.flightIata,
+          isHovered: false,
+        };
+      });
+  }, [aviationRoutes, flights]);
+
+  const allArcs = useMemo(() => [...arcs, ...routeArcs], [arcs, routeArcs]);
 
   const points = useMemo(() => {
     const seen = new Set<string>();
@@ -124,8 +173,24 @@ export default function GlobeMap({ flights, hoveredFlight }: Props) {
         }
       }
     });
+    (aviationRoutes as any[]).forEach((r) => {
+      if (r.departureIata && !seen.has(r.departureIata)) {
+        const ap = AIRPORTS[r.departureIata];
+        if (ap) {
+          pts.push({ lat: ap.lat, lng: ap.lng, label: r.departureIata, isOrigin: true });
+          seen.add(r.departureIata);
+        }
+      }
+      if (r.arrivalIata && !seen.has(r.arrivalIata)) {
+        const ap = AIRPORTS[r.arrivalIata];
+        if (ap) {
+          pts.push({ lat: ap.lat, lng: ap.lng, label: r.arrivalIata, isOrigin: false });
+          seen.add(r.arrivalIata);
+        }
+      }
+    });
     return pts;
-  }, [flights]);
+  }, [flights, aviationRoutes]);
 
   if (!Globe) {
     return (
@@ -173,20 +238,18 @@ export default function GlobeMap({ flights, hoveredFlight }: Props) {
         globeImageUrl={globeImageUrl}
         atmosphereColor={atmosphereColor}
         atmosphereAltitude={0.15}
-        // Arcs
-        arcsData={arcs}
+        // Arcs (DB flights + live flights) — one solid colour per status
+        arcsData={allArcs}
         arcStartLat={(d: any) => d.startLat}
         arcStartLng={(d: any) => d.startLng}
         arcEndLat={(d: any) => d.endLat}
         arcEndLng={(d: any) => d.endLng}
         arcColor={(d: any) => d.isHovered ? hoverArcColor : d.color}
-        arcAltitude={0.25}
+        arcAltitude={(d: any) => d.startLng <= d.endLng ? 0.22 : 0.34}
         arcStroke={(d: any) => d.isHovered ? 1.5 : 0.5}
-        arcDashLength={0.4}
-        arcDashGap={0.2}
-        arcDashAnimateTime={(d: any) =>
-          d.status === 'CANCELLED' ? 0 : 2000
-        }
+        arcDashLength={1}
+        arcDashGap={0}
+        arcDashAnimateTime={0}
         // Points
         pointsData={points}
         pointLat={(d: any) => d.lat}

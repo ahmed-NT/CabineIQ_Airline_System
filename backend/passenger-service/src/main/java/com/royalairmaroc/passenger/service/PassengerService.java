@@ -19,5 +19,7 @@ public interface PassengerService {
 
     PassengerResponseDTO assignSeat(Long id, String seatId, Long aircraftId);
 
+    PassengerResponseDTO updatePassenger(Long id, PassengerRequestDTO dto);
+
     void deletePassenger(Long id);
 }

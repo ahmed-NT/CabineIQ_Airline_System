@@ -6,6 +6,9 @@ import com.royalairmaroc.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -62,5 +65,31 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String getRoleFromToken(String token) {
         return jwtService.extractRole(token);
+    }
+
+    @Override
+    public List<Map<String, Object>> getAllUsers() {
+        return userRepository.findAll().stream()
+            .map(u -> Map.<String, Object>of(
+                "id", u.getId(),
+                "username", u.getUsername(),
+                "email", u.getEmail(),
+                "role", u.getRole().name(),
+                "createdAt", u.getCreatedAt() != null ? u.getCreatedAt().toString() : ""
+            ))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    @Override
+    public void changePassword(Long id, String newPassword) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

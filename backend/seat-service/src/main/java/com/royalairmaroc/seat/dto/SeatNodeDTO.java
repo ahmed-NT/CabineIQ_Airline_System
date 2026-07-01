@@ -15,9 +15,18 @@ public class SeatNodeDTO {
     private String scoreColor;
     private String lostItemDescription;
 
+    private String seatLetter;
+
     public SeatNodeDTO(String seatId, String status, String type) {
         this.seatId = seatId;
         this.status = status;
         this.type = type;
+    }
+
+    public SeatNodeDTO(String seatId, String status, String type, String seatLetter) {
+        this.seatId = seatId;
+        this.status = status;
+        this.type = type;
+        this.seatLetter = seatLetter;
     }
 }

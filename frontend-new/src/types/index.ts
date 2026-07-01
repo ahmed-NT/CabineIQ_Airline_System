@@ -25,6 +25,7 @@ export interface Aircraft {
   totalRows: number;
   seatsPerRow: number;
   totalSeats: number;
+  layoutType: string;
   status: 'ACTIVE' | 'MAINTENANCE' | 'RETIRED';
 }
 
@@ -32,6 +33,7 @@ export type ScoreColor = 'clean' | 'dirty' | 'lostitem' | 'unscored';
 
 export interface Seat {
   seatId: string;
+  seatLetter?: string;
   status: 'AVAILABLE' | 'OCCUPIED' | 'UNAVAILABLE';
   type: string | null;
   score?: number | null;
@@ -49,6 +51,8 @@ export interface SeatRow {
 export interface SeatMap {
   aircraftId: number;
   aircraftCode: string;
+  seatsPerRow?: number;
+  layoutType?: string;
   rows: SeatRow[];
 }
 

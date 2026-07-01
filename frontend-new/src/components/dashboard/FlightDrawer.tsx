@@ -67,6 +67,8 @@ export default function FlightDrawer({ flights, isLoading, activeFlightId }: Pro
                 key={flight.id}
                 flight={flight}
                 isActive={activeFlightId === flight.id}
+                isPinned={false}
+                onHover={() => {}}
                 onClick={(f) => navigate(`/flights/${f.id}`)}
               />
             ))}

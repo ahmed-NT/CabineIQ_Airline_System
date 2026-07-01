@@ -67,18 +67,18 @@ export default function FlightDetail() {
     enabled: !!flightId,
   });
 
-  // Seat scoring
+  // Seat scoring — always fetch scores so they display on any status,
+  // but only allow submitting new scores when DEPARTED or ARRIVED.
   const canScore = flight?.status === 'DEPARTED' || flight?.status === 'ARRIVED';
-  const scoringMode = canScore;
   const { scoredSeatMap, submitScore, isSubmitting } = useSeatScoring(
     flight?.aircraftId ?? null,
     seatMap?.aircraftCode ?? '',
     flight?.id ?? null,
-    scoringMode && canScore,
+    !!flight?.aircraftId && !!flight?.id,
   );
 
   const scoreDataMap = useMemo(() => {
-    if (!scoringMode || !scoredSeatMap) return undefined;
+    if (!scoredSeatMap) return undefined;
     const map: Record<string, SeatScoreInfo> = {};
     scoredSeatMap.rows?.forEach((row: any) => {
       row.seats.forEach((seat: any) => {
@@ -87,8 +87,8 @@ export default function FlightDetail() {
         }
       });
     });
-    return map;
-  }, [scoringMode, scoredSeatMap]);
+    return Object.keys(map).length > 0 ? map : undefined;
+  }, [scoredSeatMap]);
 
   // Occupied seats
   const occupiedSeats = useMemo(() =>
@@ -380,10 +380,13 @@ export default function FlightDetail() {
           <Aircraft3D
             occupiedSeats={occupiedSeats}
             selectedSeat={selectedPassenger?.seatId || scoringSeatId || null}
-            scoreData={scoringMode ? scoreDataMap : undefined}
+            scoreData={scoreDataMap}
             totalSeats={totalSeats || 180}
             rows={seatMap?.rows?.length || 30}
-            onSeatClick={scoringMode ? (seatId) => setScoringSeatId(seatId) : handleSeatClick}
+            seatsPerRow={seatMap?.seatsPerRow}
+            layoutType={seatMap?.layoutType}
+            seatMap={seatMap}
+            onSeatClick={canScore ? (seatId) => setScoringSeatId(seatId) : handleSeatClick}
           />
         </div>
 
@@ -482,7 +485,7 @@ export default function FlightDetail() {
         </div>
       </div>
       {/* Seat Score Modal */}
-      {scoringMode && scoringSeatId && flight && (
+      {canScore && scoringSeatId && flight && (
         <SeatScoreModal
           seatId={scoringSeatId}
           existingScore={scoredSeatMap?.rows
