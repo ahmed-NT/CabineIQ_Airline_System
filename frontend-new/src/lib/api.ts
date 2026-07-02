@@ -6,6 +6,14 @@ const mlClient = axios.create({
   timeout: 5000,
 });
 
+mlClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('ram_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
